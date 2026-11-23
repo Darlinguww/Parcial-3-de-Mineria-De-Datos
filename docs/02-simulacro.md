@@ -1,0 +1,236 @@
+# Simulacro de examen final — Criptografía
+
+Universidad del Norte. Cubre los cuatro temas del tablero, con el estilo del banco de ejercicios.
+
+**No abras el solucionario hasta terminar.** Está en `docs/03-solucionario.md`.
+
+| | |
+| --- | --- |
+| Puntaje | 100 puntos |
+| Tiempo | 120 minutos |
+| Material | Ninguno. Aritmética modular a mano. |
+| Curva de los ejercicios numéricos | \(y^2 \equiv x^3 + 2x + 2 \pmod{17}\), \(G = (5,1)\), orden \(q = 19\) |
+
+Múltiplos que puedes usar sin recalcular. Si un punto no está en la tabla, calcúlalo con la ley de grupo.
+
+| \(k\) | \(kG\) | \(k\) | \(kG\) |
+| --- | --- | --- | --- |
+| 1 | (5, 1) | 6 | (16, 13) |
+| 2 | (6, 3) | 7 | (0, 6) |
+| 3 | (10, 6) | 8 | (13, 7) |
+| 4 | (3, 1) | 10 | (7, 11) |
+| 5 | (9, 16) | 15 | (3, 16) |
+
+Inversos que puedes usar: módulo 17, \(2^{-1} \equiv 9\), \(3^{-1} \equiv 6\). Módulo 19, \(4^{-1} \equiv 5\), \(7^{-1} \equiv 11\), \(9^{-1} \equiv 17\).
+
+---
+
+## Sección A. Selección única (5 × 2 = 10 puntos, 8 minutos)
+
+Una sola opción.
+
+**A1.** En el juego de colisión de las diapositivas, el adversario gana cuando:
+
+- (a) Recibe \(t = H(m)\) y encuentra algún \(m'\) con \(H(m') = t\).
+- (b) Recibe \(m\) y encuentra \(m' \neq m\) con el mismo hash.
+- (c) Encuentra \(m_0 \neq m_1\) con \(H(m_0) = H(m_1)\), sin que el retador le haya dado un mensaje.
+- (d) Encuentra la llave secreta de HMAC.
+
+**A2.** Con resúmenes uniformes de \(n\) bits, el costo de referencia de una colisión frente al de una preimagen es:
+
+- (a) Los dos son del orden de \(2^n\).
+- (b) La colisión es del orden de \(2^{n/2}\) y la preimagen del orden de \(2^n\).
+- (c) La preimagen es del orden de \(2^{n/2}\) y la colisión del orden de \(2^n\).
+- (d) Los dos son del orden de \(n\).
+
+**A3.** En encrypt-then-MAC, el receptor debe:
+
+- (a) Descifrar y después comprobar la etiqueta del claro.
+- (b) Comprobar la etiqueta del criptotexto y, solo si es válida, descifrar.
+- (c) Comprobar \(H(m)\) sin llave.
+- (d) Aceptar si el relleno del descifrado es correcto, aunque la etiqueta falle.
+
+**A4.** Un tercero puede comprobar una firma de Alicia, y no puede comprobar una MAC entre Alicia y Bob, porque:
+
+- (a) La firma usa un hash y la MAC no.
+- (b) Verificar la firma usa la llave pública; verificar la MAC exige la llave secreta compartida, y quien la tiene puede fabricar etiquetas.
+- (c) La MAC cifra y la firma no.
+- (d) ECDSA no usa un hash.
+
+**A5.** En la esponja, los bits de capacidad \(c\):
+
+- (a) Se publican como parte de cada bloque de salida.
+- (b) Reciben el bloque de mensaje por XOR, igual que la tasa.
+- (c) No reciben el mensaje de forma directa y no se entregan como salida.
+- (d) Son el vector inicial secreto de Merkle–Damgård.
+
+---
+
+## Sección B. Selección múltiple (3 × 3 = 9 puntos, 10 minutos)
+
+Puede haber más de una opción correcta. El punto completo exige el conjunto exacto: ni de más ni de menos.
+
+**B1.** ¿Cuáles son propiedades del registro de contraseñas que describen las diapositivas?
+
+- (a) La sal puede ser pública.
+- (b) La sal impide probar un diccionario contra ese registro concreto.
+- (c) Sin sal, una tabla \((w, H(w))\) sirve para muchos usuarios.
+- (d) Subir el costo \(d\) encarece cada candidato y no vuelve impredecible una contraseña de diccionario.
+- (e) Limitar los intentos de login detiene el ataque sobre una copia filtrada del registro.
+
+**B2.** ¿Cuáles de estas fallas permiten recuperar la llave privada \(x\) de ECDSA, o rompen la firma de forma directa?
+
+- (a) Usar el mismo nonce \(k\) en dos firmas con la misma \(x\) y resúmenes distintos módulo \(q\).
+- (b) Publicar el punto \(Y = xP\).
+- (c) Conocer el nonce \(k\) de una firma válida con \(r \neq 0\).
+- (d) Verificar con \(s^{-1}(hP + rY)\) una firma bien generada.
+- (e) Elegir \(k = 0\).
+
+**B3.** ¿Cuáles hacen falta para que encrypt-then-MAC dé confidencialidad e integridad, según el teorema citado en clase?
+
+- (a) Un cifrado seguro frente a mensajes elegidos y una MAC segura.
+- (b) Llaves \(k_E\) y \(k_M\) independientes.
+- (c) Autenticar el criptotexto, incluido el IV si el cifrado lo usa.
+- (d) Que la MAC se calcule sobre el claro y el cifrado sea un simple XOR con la llave.
+- (e) Verificar la etiqueta antes de descifrar.
+
+---
+
+## Sección C. Verdadero o falso, con justificación (5 × 3 = 15 puntos, 15 minutos)
+
+Marca V o F. La justificación vale 2 de los 3 puntos. Sin justificación, el inciso vale 0.
+
+**C1.** Si \(H\) es resistente a colisiones, entonces es resistente a segunda preimagen.
+
+**C2.** En el juego de MAC de las diapositivas, el adversario pierde automáticamente si el mensaje de su falsificación ya había sido consultado, aunque la etiqueta sea distinta de todas las que recibió.
+
+**C3.** ECDH básico, sin más autenticación, impide que un adversario activo entregue a cada lado un punto suyo y acuerde un secreto distinto con cada uno.
+
+**C4.** En SHAKE, al pedir más bytes de salida sobre el mismo mensaje, los primeros bytes cambian.
+
+**C5.** Sellar el tiempo con \(H(\sigma)\), siendo \(\sigma\) la firma de Alicia sobre la orden \(M\), demuestra que \(M\) ya existía a esa hora solo si además se verifica \(\sigma\) sobre \(M\).
+
+---
+
+## Sección D. Completar (5 × 2 = 10 puntos, 8 minutos)
+
+Una frase o una fórmula corta por inciso.
+
+**D1.** En Merkle–Damgård, el relleno tiene que codificar ________ para que la resistencia a colisiones de la compresión pase a la función iterada.
+
+**D2.** Davies–Meyer: \(h(x, y) = \) ________, donde \(y\) es el bloque de mensaje y \(x\) es el estado.
+
+**D3.** HMAC: \(t = H(\) ________ \(\mathbin\|\) ________\()\), con \(d\) el hash interno.
+
+**D4.** Verificación de ECDSA: \(a = \) ________, \(b = \) ________, y se acepta si \(x_{R'} \bmod q = r\), con \(R' = aP + bY\).
+
+**D5.** En el reto–respuesta, Bob acepta \(t\) solo si el reto sigue ________ y \(V(k, c, t) = 1\). Después, Bob ________ el reto.
+
+---
+
+## Sección E. Preguntas abiertas (3 × 6 = 18 puntos, 24 minutos)
+
+**E1. (Hash y firma.)** El esquema base \((\mathrm{Firma}_0, \mathrm{Ver}_0)\) es seguro para mensajes de longitud fija. Se define
+
+\[
+\mathrm{Firma}(sk, m) = \mathrm{Firma}_0(sk, H(m)).
+\]
+
+Supón que conoces \(m_0 \neq m_1\) con \(H(m_0) = H(m_1)\). Describe un adversario que gane el juego de falsificación existencial bajo mensaje elegido. Indica qué consulta, qué entrega y por qué el verificador acepta.
+
+**E2. (MAC frente a firma.)** Alicia le envía a Bob la orden “comprar el automóvil rojo”. Bob quiere que un juez pueda comprobar, dentro de un año, que Alicia autorizó esa orden.
+
+- (a) Explica por qué guardar \((m, \mathrm{MAC}_k(m))\) no le sirve al juez.
+- (b) Explica qué guarda Bob si Alicia firma, y qué necesita el juez además del documento.
+- (c) Una frase: qué propiedad aporta la firma y la MAC no.
+
+**E3. (Reducción.)** Usando solo los juegos de las diapositivas, demuestra que un adversario que rompe la resistencia a segunda preimagen puede usarse para romper la resistencia a colisiones. Escribe el adversario de colisión paso a paso.
+
+---
+
+## Sección F. Ejercicios numéricos (2 × 8 = 16 puntos, 25 minutos)
+
+**F1. (Suma en la curva, 8 puntos.)** Sobre \(y^2 \equiv x^3 + 2x + 2 \pmod{17}\):
+
+- (a) Calcula \(2\cdot(5, 1)\). Muestra \(\lambda\), \(x_3\) y \(y_3\).
+- (b) Calcula \((5, 1) + (6, 3)\). Muestra \(\lambda\), \(x_3\) y \(y_3\).
+- (c) ¿Cuál es el inverso de \((5, 1)\)? ¿Cuánto da su suma con \((5, 1)\)?
+
+**F2. (ECDSA, 8 puntos.)** \(G = (5,1)\), orden \(q = 19\). Llave privada \(x = 3\), así \(Y = 3G = (10, 6)\). El resumen del mensaje es \(h = 8\). El nonce es \(k = 5\).
+
+- (a) Calcula \(r\) y \(s\). Puedes usar la tabla.
+- (b) Verifica la firma: calcula \(w\), \(a\), \(b\) y el punto \(R'\). Di si se acepta.
+- (c) Sin recalcular otra firma: si la misma \(k\) se usa con \(h_2 = 4\) y obtienes \(s_2 = 10\), escribe las dos congruencias que determinan \(k\) y \(x\). No hace falta resolverlas si dejas despejadas \(k\) y \(x\).
+
+---
+
+## Sección G. Vulnerabilidades (2 × 6 = 12 puntos, 16 minutos)
+
+**G1.** Protocolo propuesto para “integridad”:
+
+1. Alicia calcula \(t = H(m)\) con SHA-256, sin llave.
+2. Envía \((m, t)\) por un canal que el adversario lee y modifica.
+3. Bob acepta si \(H(m) = t\).
+
+- (a) ¿Bob detecta un cambio accidental de un bit, si el adversario no toca el mensaje? 
+- (b) Describe la sustitución que hace un adversario activo para que Bob acepte otro mensaje.
+- (c) ¿Qué primitiva del curso cierra ese hueco si Alicia y Bob pueden compartir un secreto? ¿Y si quien verifica es un tercero que no debe poder firmar?
+
+**G2.** ElGamal en la curva. \(Q = dG\) es pública. Los efímeros cumplen \(i_j \equiv i_{j-1} + f(j) \pmod q\), con \(f\) pública. Oscar conoce \(M_n\) y todos los criptotextos \((R_j, S_j)\), donde \(S_j = M_j + i_j Q\).
+
+- (a) Escribe \(T_n = i_n Q\) a partir de datos que Oscar ya tiene.
+- (b) Escribe \(T_{j-1}\) a partir de \(T_j\).
+- (c) Escribe \(M_j\) a partir de \(S_j\) y \(T_j\).
+- (d) Una frase: ¿hace falta resolver el logaritmo discreto?
+
+---
+
+## Sección H. Diseño (1 × 6 = 6 puntos, 8 minutos)
+
+**H1.** Vas a guardar las contraseñas de un servidor de login. El canal de login ya es confidencial y autenticado con el servidor.
+
+Describe el registro que guardas, cómo verificas un login, y por qué cada decisión. Tienes que referirte a: hash rápido solo, sal, costo ajustable, y qué ataque queda abierto de todos modos. No pidas una marca comercial concreta: el criterio del curso basta (sal aleatoria por registro, derivación con dificultad \(d\), comparación del verificador).
+
+---
+
+## Sección I. Pseudocódigo (1 × 4 = 4 puntos, 6 minutos)
+
+**I1.** Escribe el descifrado y la comprobación de un paquete encrypt-then-MAC \((c, t)\), con llaves \(k_E\) y \(k_M\). El descifrado del cifrado se llama \(\mathrm{Dec}\). La verificación de la MAC se llama \(V\). Tiene que verse en qué orden ocurren y qué se devuelve si la etiqueta es inválida.
+
+---
+
+## Sección J. Razonamiento de seguridad (1 × 10 = 10 puntos, 15 minutos)
+
+**J1.** Correctitud de ECDSA. Partes de una firma generada con honestidad:
+
+\[
+R = kP,\quad r = x_R \bmod q,\quad s \equiv k^{-1}(h + rx) \pmod q,\quad Y = xP,
+\]
+
+con \(r \neq 0\), \(s \neq 0\). El verificador calcula \(R' = s^{-1} h\, P + s^{-1} r\, Y\).
+
+- (a) Demuestra que \(R' = kP\).
+- (b) Concluye que el verificador acepta.
+- (c) Di en qué paso usas que el orden de \(P\) es \(q\).
+
+---
+
+## Distribución
+
+| Sección | Puntos | Tiempo | Temas | Dificultad |
+| --- | --- | --- | --- | --- |
+| A única | 10 | 8 min | Los cuatro | Fácil |
+| B múltiple | 9 | 10 min | Hash, ECDSA, MAC | Media |
+| C V/F | 15 | 15 min | Los cuatro | Media |
+| D completar | 10 | 8 min | Los cuatro | Fácil |
+| E abiertas | 18 | 24 min | Firma, MAC, hash | Media |
+| F numéricos | 16 | 25 min | Curvas, ECDSA | Media / difícil |
+| G casos | 12 | 16 min | Hash, MAC, ElGamal | Media |
+| H diseño | 6 | 8 min | Contraseñas | Media |
+| I pseudocódigo | 4 | 6 min | AEAD | Fácil |
+| J demostración | 10 | 15 min | ECDSA | Difícil |
+| **Total** | **100** | **135 min de reloj de secciones; hazlo en 120** |  |  |
+
+Si te pasas de 120 minutos, marca hasta dónde llegaste: eso también es un dato del simulacro. En el examen real empieza por D, A, I y el inciso (a) de F1 antes de atascarte en J.
+
+**Después de entregar.** Corrige con el solucionario. Anota cada inciso en 0, 1 o 2: no salió / a medias / sólido. Eso alimenta el último bloque del plan de estudio.

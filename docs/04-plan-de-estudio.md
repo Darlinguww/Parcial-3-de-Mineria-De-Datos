@@ -1,0 +1,123 @@
+# Plan de 2 días — criptografía, con lo que sí tiene evidencia
+
+**Encaje.** 2 días, **6 horas de estudio enfocado por día** (no estaban escritas las horas; si tienes 4, usa solo las filas marcadas como núcleo). El examen se trata como escrito y sin calculadora, igual que el simulacro.
+
+Este tema mezcla tres memorias distintas: procedimientos (la suma de puntos, HMAC), hechos condicionales (qué juego gana el adversario) y detección de fallos (nonce repetido, MAC-then-encrypt). Releer las diapositivas practica el reconocimiento, que es lo que ya vas a tener cuando veas el enunciado. El examen pide producción. Por eso el plan empuja la recuperación, no la relectura.
+
+## Qué hacer con cada técnica, en estos temas
+
+**Recuperación activa.** Cierra el PDF y escribe el juego o el algoritmo. Ejemplo concreto: después de la suma de puntos, calcula de nuevo \(2\cdot(5,1)\) en \(\mathbb{F}_{17}\) sin mirar \(\lambda\). Si no sale \((6,3)\), abre la guía solo para ver el primer paso que falló y vuelve a cerrarla.
+
+**Repetición espaciada.** Un algoritmo visto a las 9, preguntado a las 13 y repreguntado a la mañana siguiente, se consolida más que el mismo tiempo seguido. El día 2 empieza en frío, antes de abrir la guía. El hueco de la noche es el intervalo; no lo rellenes con un repaso largo a las 23:00.
+
+**Práctica intercalada.** No hagas “todo curvas” y luego “todo hash” en bloques de tres horas. En el día 1, la sesión de la tarde mezcla un ítem de curvas con uno de hash. En el día 2, cada ficha de MAC va seguida de una de firma. El examen también viene mezclado, y el fallo típico es contestar el juego de la MAC con la condición de la firma.
+
+**Elaboración.** Cada fórmula se engancha a una pregunta de “por qué está ese término”. ¿Por qué \(k^{-1}\) en ECDSA? Porque el verificador no conoce \(k\) y tiene que cancelarlo con \(s^{-1}\). ¿Por qué la sal es pública? Porque su trabajo es separar registros, no esconderse. ¿Por qué HKDF lleva `info`? Para que la llave de cifrar y la de autenticar no sean el mismo bloque.
+
+**Autoexplicación y Feynman.** Explica en voz alta, como si se lo contaras a alguien que ya sabe álgebra y no criptografía. Si dices “entonces el verificador acepta” y no puedes señalar el paso \(s^{-1}(h+rx) \equiv k\), todavía no está. Grábate 90 segundos sobre el hombre en el medio de ECDH. Al oírte, se nota si dijiste que Mallory “rompe el logaritmo”. No lo rompe.
+
+**Ejemplos resueltos, en el orden correcto.** Mira un ejemplo completo (la firma \((r,s) = (9,7)\)). Tápalo. Resuelve uno vecino cambiando un solo dato: \(h = 4\) con el mismo \(k\), que es la segunda firma del simulacro. Cambiar un solo número obliga a repetir el procedimiento sin convertirlo en un problema nuevo.
+
+**Práctica deliberada.** El criterio de “ya lo sé” no es haberlo leído. Es: sin notas, escribes el juego, el algoritmo y el fallo clásico. Lo que no pasa ese criterio vuelve al día 2. Lo que sí pasa, no se vuelve a leer: se pregunta una vez más al final.
+
+## Memoria de fórmulas frente a comprensión
+
+No memorices las cuatro propiedades del grupo como una lista suelta. Memoriza el dibujo: identidad \(\mathcal{O}\), inverso \((x,-y)\), \(\lambda\) de la recta, y que los escalares viven módulo el orden.
+
+Vale la pena dejar en memoria muscular, porque se piden textuales:
+
+- \(\lambda\) de la suma y del doble.
+- \(s = k^{-1}(h+rx) \bmod q\) y \(R' = s^{-1}(hP + rY)\).
+- \(k = (h_1-h_2)(s_1-s_2)^{-1}\) cuando se repite el nonce.
+- Los tres juegos del hash y la condición exacta de victoria de la MAC: par nuevo, no necesariamente mensaje nuevo.
+- HMAC: hash interno con \(k_{\mathrm{in}}\), hash externo con \(k_{\mathrm{out}}\).
+- Encrypt-then-MAC: verificar el criptotexto antes de descifrar.
+
+No vale la pena memorizar constantes de Keccak, el polinomio de GCM ni la tabla completa de múltiplos. Sí hay que saber qué es \(r\), qué es \(c\), y que GHASH sin la máscara de AES no es segura.
+
+## Sueño, descanso, movimiento
+
+El sueño de la noche entre el día 1 y el día 2 es parte del estudio: ahí se consolida lo que recuperaste, no lo que subrayaste. Duerme. Un repaso de 15 minutos al cerrar, con tres fórmulas escritas de memoria, y se acabó la sesión.
+
+Entre bloques de 50 minutos, levántate 10. Una caminata corta después del bloque de ECDSA baja la interferencia antes de entrar a los juegos del hash. No uses ese descanso para “mirar un poco las diapositivas”.
+
+Cafeína temprano, no en las dos horas previas a dormir. El simulacro se hace de día, no a medianoche: quieres ver cómo rindes cuando el examen también será de día.
+
+## Ansiedad y condiciones del examen
+
+El simulacro se hace con el mismo límite: 120 minutos, sin guía, teléfono en otra habitación, una hoja de múltiples ya escrita o la tabla que el enunciado trae. Cuando termines, no recalcules “con el PDF al lado” antes de corregir. Primero corrige. La nota es información, no un veredicto.
+
+En el examen real:
+
+1. Lee la hoja entera, dos minutos. Marca los numéricos y la demostración.
+2. Vuelca en el borrador, de una vez, \(\lambda\), la fórmula de \(s\), la de HMAC y el orden verificar-luego-descifrar. Eso libera la memoria de trabajo.
+3. Empieza por lo que se produce rápido (completar, única, pseudocódigo).
+4. Si un cálculo módulo 17 no cuadra, cambia de problema y vuelve. Un \(y_3\) con el signo mal no debe comerse 20 minutos.
+5. En una pregunta de “encuentra el error”, la primera frase nombra el fallo (“el nonce se repite”, “el hash no tiene llave”, “se descifra antes de verificar”). Después viene el ataque en tres líneas. No empieces por álgebra.
+
+Si te quedas en blanco en una demostración, escribe el juego o la correctitud a medias. Un paso algebraico correcto puntúa; una hoja vacía no.
+
+## Qué no hacer
+
+- Releer las diapositivas “para refrescar” como actividad principal. Si ya leíste la guía una vez, el siguiente contacto con el tema es una pregunta.
+- Subrayar PDFs. El subrayado se siente como avance y no se puede recuperar.
+- Hacer resúmenes cada vez más largos. El único resumen permitido a partir de la tarde del día 2 es la hoja de una página, escrita de memoria y luego comparada.
+- Estudiar PAKE o Schnorr antes de poder firmar y verificar el ejemplo ECDSA. Están en el apéndice precisamente por eso.
+- Resolver el simulacro con la guía abierta. Eso mide lectura, no el examen.
+
+## Autoevaluación
+
+Después de cada bloque, tres preguntas en una hoja aparte, sin mirar:
+
+1. ¿Cuál es el juego o la definición?
+2. ¿Cuál es el algoritmo, con las entradas y las salidas?
+3. ¿Cuál es el fallo clásico?
+
+Puntúa 0, 1 o 2. Un 0 entra al día 2 sí o sí. Un 2 no se reestudia: solo se vuelve a preguntar en el repaso en frío de la mañana. Al corregir el simulacro, la misma escala por inciso. El último bloque del día 2 se gasta únicamente en los ceros y los unos.
+
+---
+
+## Día 1 — entender y dejar hecha la primera recuperación
+
+| Hora | Bloque | Qué haces | Hecho cuando… |
+| --- | --- | --- | --- |
+| 0:00–0:50 | Núcleo. Curvas | Guía 1.2 y 1.3. Calcula \(2G\) y \(G+2G\) con el cuaderno cerrado. | Te salen \((6,3)\) y \((10,6)\) |
+| 0:50–1:00 | Pausa | De pie, sin pantalla | |
+| 1:00–1:50 | Núcleo. ECDH, ElGamal, ECDSA | Guía 1.5 a 1.7. Escribe la correctitud de ECDSA sin mirar. Luego mírala. | Llegas a \(R' = kP\) |
+| 1:50–2:00 | Pausa | | |
+| 2:00–2:25 | Nonce y MITM | Guía 1.8 y el final de 1.5, en voz alta. Feynman de 90 segundos cada uno. | Dices “no se rompe el ECDLP” en el MITM |
+| 2:25–2:35 | Pausa y caminata | | |
+| 2:35–3:25 | Núcleo. Hash | Guía 2.2 a 2.5. Escribe los tres juegos y la diferencia de costos. | CR \(\Rightarrow\) SPR con el adversario bien orientado |
+| 3:25–3:35 | Pausa | | |
+| 3:35–4:20 | Núcleo. Contraseñas y PoW | Guía 2.6 y 2.7. Cierra y contesta: ¿por qué la sal puede ser pública? ¿en qué se diferencia el umbral \(T\) de una preimagen? | Las dos respuestas caben en cuatro líneas |
+| 4:20–4:30 | Pausa | | |
+| 4:30–5:20 | Intercalado | 8 fichas: 4 de curvas y 4 de hash, alternadas, de `05-repaso-rapido.md`. Las que fallen vuelven al mazo. | Al menos 6 a la primera |
+| 5:20–5:30 | Pausa | | |
+| 5:30–6:00 | Cierre | Escribe de memoria: \(\lambda\) suma, \(\lambda\) doble, \(s\), los tres juegos, \(p = T/2^n\). Compara. Duerme después; no abras las diapositivas. | La hoja de cierre existe, aunque tenga huecos |
+
+## Día 2 — MAC, firmas, examen, huecos
+
+| Hora | Bloque | Qué haces | Hecho cuando… |
+| --- | --- | --- | --- |
+| 0:00–0:20 | En frío | Sin abrir nada: las cinco fórmulas del cierre de anoche. Luego sí comparas. | Anotas los huecos reales, no los que “casi” |
+| 0:20–1:10 | Núcleo. MAC | Guía 3.2 a 3.4. Escribe el juego y HMAC. | La condición de victoria menciona el par, no solo el mensaje |
+| 1:10–1:20 | Pausa | | |
+| 1:20–2:05 | Núcleo. Protocolos de MAC | Guía 3.5 a 3.7. Un párrafo de reto–respuesta, uno de HKDF, uno de por qué las otras dos composiciones fallan. | Verificar-antes-de-descifrar está en el párrafo |
+| 2:05–2:15 | Pausa | | |
+| 2:15–3:05 | Núcleo. Firmas | Guía 4.2, 4.3, 4.6. EUF-CMA, el ataque por colisión, y una aplicación contada en voz alta (certificado o sello). | El ataque usa un solo mensaje consultado |
+| 3:05–3:15 | Pausa y caminata | | |
+| 3:15–3:40 | Solo si los núcleos están en 2 | Apéndice: Schnorr con el ejemplo \(p=23\), y la tabla de PAKE. Si algún núcleo sigue en 0, ese tiempo se lo lleva el núcleo. | |
+| 3:40–5:20 | Simulacro | `02-simulacro.md`, 120 minutos de reloj, o hasta donde llegues dentro de este bloque de 100 minutos si empezaste tarde. Sin guía. | Hay una hoja entregada |
+| 5:20–6:00 | Corrección útil | Solucionario. Solo se rehacen incisos de 0 y 1. Una frase por fallo: “confundí el módulo”, “usé el juego de la firma”. La hoja de una página se escribe ahora, de memoria, y se compara con `05-repaso-rapido.md`. | Lista de como máximo 5 huecos, no 20 |
+
+## Si solo tienes 4 horas cada día
+
+Día 1: suma de puntos y ECDSA con nonce (90 min), juegos del hash y contraseñas (90 min), fichas intercaladas (40 min).
+
+Día 2: MAC, HKDF y encrypt-then-MAC (70 min), EUF-CMA y una aplicación de firma (70 min), simulacro reducido a las secciones D, E, F, G y J (70 min), corrección (30 min).
+
+Se sacrifican CMAC en detalle, la escalera de Montgomery, Schnorr y PAKE. No se sacrifica el nonce de ECDSA ni la diferencia entre hash, MAC y firma.
+
+## La mañana del examen
+
+Veinte minutos. Hoja de una página escrita otra vez de memoria. Desayuno. No es un momento para un tema nuevo. Si aparece un protocolo que no viste, haz lo de la última sección de la guía: juego, secreto, qué pasa si se reutiliza, y solo entonces la fórmula.

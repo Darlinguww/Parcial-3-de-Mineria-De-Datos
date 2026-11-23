@@ -1,0 +1,216 @@
+# Repaso rápido
+
+Fichas, hoja de una página y las diez preguntas con más cara de parcial. Las respuestas están debajo de cada ficha: tápala con la mano o con el modo fichas del canvas.
+
+---
+
+## Fichas
+
+**1.** ¿Qué es \(\mathcal{O}\) en la curva?
+La identidad del grupo. \(P + \mathcal{O} = P\). No es el punto \((0,0)\).
+
+**2.** ¿Cuál es el inverso de \((x,y)\)?
+\((x,\, -y \bmod p)\). Su suma con \((x,y)\) es \(\mathcal{O}\).
+
+**3.** \(\lambda\) cuando \(P \neq \pm Q\).
+\((y_2-y_1)(x_2-x_1)^{-1} \bmod p\).
+
+**4.** \(\lambda\) al doblar \(P = (x,y)\), curva \(y^2 = x^3 + Ax + B\).
+\((3x^2+A)(2y)^{-1} \bmod p\).
+
+**5.** ¿Por qué \(kP\) está bien definido?
+Porque \((E,+)\) es un grupo: \(0\cdot P = \mathcal{O}\) y \(kP = (k-1)P + P\).
+
+**6.** ¿Qué conmuta en ECDH?
+\(\alpha(\beta G) = \beta(\alpha G)\). Los dos calculan el mismo punto.
+
+**7.** ¿Qué rompe el hombre en el medio de ECDH?
+La autenticidad del canal, no el problema de Diffie–Hellman. Cada lado comparte un secreto distinto con Mallory.
+
+**8.** Cifrado ElGamal en la curva.
+\(R = iG\), \(S = M + i(dG)\). Se descifra \(S - dR\).
+
+**9.** ¿Qué tiene que cumplir el efímero \(i\) y el nonce \(k\)?
+Secreto, uniforme en \(\{1,\ldots,q-1\}\), y nuevo en cada uso.
+
+**10.** Firma ECDSA, fórmulas de \(r\) y \(s\).
+\(R = kP\), \(r = x_R \bmod q\), \(s = k^{-1}(h+rx) \bmod q\), con \(r,s \neq 0\).
+
+**11.** ¿Qué recomputa el verificador de ECDSA?
+\(w = s^{-1}\), \(a = hw\), \(b = rw\), \(R' = aP + bY\), y compara \(x_{R'} \bmod q\) con \(r\).
+
+**12.** ¿Por qué \(R' = kP\)?
+\(Y = xP\) y \(s^{-1}(h+rx) \equiv k \pmod q\). El orden \(q\) deja bajar el escalar al punto.
+
+**13.** Misma \(k\) en dos firmas.
+Mismo \(r\). \(k = (h_1-h_2)(s_1-s_2)^{-1}\), \(x = (ks_1-h_1)r^{-1}\), todo módulo \(q\).
+
+**14.** ¿En qué módulo vive cada cosa de ECDSA?
+Coordenadas módulo \(p\). Escalares \(k, r, s, x, h\) módulo \(q\).
+
+**15.** Invariante de la escalera de Montgomery.
+\(R_0 = k_{\text{parcial}}P\), \(R_1 = (k_{\text{parcial}}+1)P\). Al salir, \(R_0 = kP\).
+
+**16.** Juego de preimagen.
+El retador entrega \(t = H(m)\), no \(m\). Ganas si \(H(m') = t\).
+
+**17.** Juego de segunda preimagen.
+El retador entrega \(m\). Ganas si \(m' \neq m\) y \(H(m') = H(m)\).
+
+**18.** Juego de colisión.
+Nadie te da un mensaje. Ganas con cualquier pareja distinta del mismo hash.
+
+**19.** Flecha que sí se demuestra con un adversario.
+Quien rompe segunda preimagen rompe colisiones: se elige \(m\), se pide \(m'\), se entrega el par. Por tanto, colisión resistente implica segunda-preimagen resistente.
+
+**20.** Costos con salida de \(n\) bits.
+Preimagen: orden \(2^n\). Colisión: orden \(2^{n/2}\).
+
+**21.** ¿Por qué SHA-256 saca 256 bits?
+Para que la colisión quede en \(2^{128}\). Con 128 bits de salida, la colisión cae en \(2^{64}\).
+
+**22.** Merkle–Damgård, en una línea.
+\(t_0 = \mathrm{IV}\), \(t_i = h(t_{i-1}, m_i)\), relleno que codifica la longitud.
+
+**23.** Davies–Meyer.
+\(h(x,y) = E(y,x) \oplus x\). El bloque es la llave del cifrador. SHA-256 combina con \(\boxplus\) módulo \(2^{32}\).
+
+**24.** Extensión de longitud.
+Con \(H(M)\) y la longitud, en Merkle–Damgård se sigue la cadena sobre \(M \mathbin\| \mathrm{relleno} \mathbin\| M'\) sin conocer \(M\). SHA-3 no tiene este ataque.
+
+**25.** ¿Por qué \(H(k\mathbin\| m)\) no sirve como MAC?
+La extensión de longitud fabrica una etiqueta de un mensaje más largo sin conocer \(k\).
+
+**26.** Esponja: tasa y capacidad.
+Estado \(b = r+c\). El mensaje entra solo por los \(r\) bits. La salida son bloques de \(r\) bits. La capacidad no se publica.
+
+**27.** SHA3-256 y SHAKE256, mismo \(r = 1088\). ¿Qué los distingue?
+El sufijo antes del relleno: `01` frente a `1111`. SHA-256 no es ninguna de las dos.
+
+**28.** ¿La salida corta de SHAKE es independiente de la larga?
+No. Es un prefijo.
+
+**29.** ¿Para qué es la sal si es pública?
+Impide reutilizar una tabla de hashes entre registros. No impide el diccionario sobre el registro cuya sal ya se filtró.
+
+**30.** ¿Qué encarece \(d\) en la derivación de contraseñas?
+Cada candidato, para el servidor y para el atacante. No reduce el diccionario ni salva una contraseña predecible.
+
+**31.** Prueba de trabajo.
+Buscar \(\mathrm{int}(H(m\mathbin\|\nu)) < T\). Promedio de intentos \(2^n/T\). Verificar es un hash. No es una preimagen de un resumen fijo.
+
+**32.** ¿Qué aporta el reto \(r\) de un solo uso en la prueba de trabajo web?
+Ata la prueba a esa solicitud, caduca, y no se puede repetir. No impide saturar el enlace.
+
+**33.** Condición de victoria del MAC del curso.
+\((m^\star, t^\star)\) no fue entregado por el retador, y \(V\) acepta. El mensaje puede ser viejo si la etiqueta es nueva.
+
+**34.** HMAC, cableado.
+\(d = H(k_{\mathrm{in}}\mathbin\| m)\), \(t = H(k_{\mathrm{out}}\mathbin\| d)\), con ipad `0x36` y opad `0x5c`.
+
+**35.** CMAC, en corto.
+AES en cadena. Último bloque completo con máscara \(K_1\); incompleto, relleno y máscara \(K_2\). Etiqueta de 128 bits. El vacío cuenta como incompleto.
+
+**36.** Reto–respuesta.
+\(c\) aleatorio, pendiente, de un solo uso. \(t = S(k,c)\). Al aceptar, se borra \(c\).
+
+**37.** \(k = H(pw)\) dentro del reto–respuesta.
+No rompe HMAC. Permite probar el diccionario fuera de línea sobre el par \((c,t)\).
+
+**38.** HKDF.
+Extract: \(\mathrm{PRK} = \mathrm{HMAC}(\mathrm{salt}, s)\). Expand: HMAC con `info` y un contador. Una `info` para \(k_E\), otra para \(k_M\).
+
+**39.** Encrypt-then-MAC.
+Cifrar con \(k_E\), etiquetar el criptotexto con \(k_M\), verificar antes de descifrar. Llaves independientes.
+
+**40.** ¿Por qué MAC-then-encrypt no es genéricamente seguro?
+Hay que descifrar para poder verificar. Un error de relleno o de formato se convierte en oráculo, sin romper la MAC.
+
+**41.** AEAD, cuatro símbolos.
+Nonce \(N\) público y único, datos asociados \(A\) autenticados y no cifrados, criptotexto \(C\), etiqueta \(T\). Descifrado devuelve \(M\) o \(\bot\).
+
+**42.** GCM, un cuidado.
+No repetir el nonce con la misma llave. GHASH sola no es una MAC: hace falta la máscara de AES.
+
+**43.** Juego EUF-CMA de la firma.
+El adversario tiene \(pk\), pide firmas, y gana con una firma válida de un mensaje que no consultó.
+
+**44.** Hash-luego-firma, si hay colisión \(m_0, m_1\).
+Pides la firma de \(m_0\) y la entregas como firma de \(m_1\).
+
+**45.** ¿Qué guarda el certificado?
+El vínculo firmado entre un nombre y una llave pública: datos TBS más la firma de la autoridad. No guarda la llave privada.
+
+**46.** ¿Qué demuestra `CertificateVerify`?
+Que este servidor posee \(sk_S\) en este saludo. Copiar el certificado no basta.
+
+**47.** CRL y OCSP.
+Las dos responden si un certificado vigente por fecha fue revocado. Las dos van firmadas. CRL es una lista; OCSP es el estado de un certificado.
+
+**48.** ¿Sobre qué se calcula el sello de tiempo del curso?
+Sobre \(H(\sigma)\), los bytes de la firma de Alicia, no sobre la orden. El tercero además verifica \(\sigma\) sobre \(M\).
+
+**49.** MAC frente a firma, una frase.
+Las dos dan integridad; solo la firma la puede comprobar quien no debe ser capaz de producirla.
+
+**50.** RSA-PKCS#1 v1.5, qué se eleva a \(d\).
+El entero big-endian del bloque `00 01 FF…FF 00 DI H(M)`, no el hash pelado. Verificar es recuperar ese bloque con el exponente público y compararlo entero.
+
+**51.** Correctitud de una firma, definición.
+Si \(\sigma\) salió de \(\mathrm{Firma}(sk, M)\) con llaves de \(\mathrm{Gen}\), entonces \(\mathrm{Ver}(pk, M, \sigma) = 1\).
+
+**52.** Schnorr, verificación.
+\(g^s \stackrel{?}{=} t \cdot y^c\), con \(s = r + cx \bmod q\) y \(t = g^r\).
+
+**53.** Dos transcripciones de Schnorr con el mismo \(t\) y distinto reto.
+\(x = (s-s')(c-c')^{-1} \bmod q\).
+
+**54.** Fiat–Shamir sobre Schnorr.
+\(c = H(m \mathbin\| t)\) sustituye el reto de Victor. La firma es no interactiva.
+
+---
+
+## Hoja de una página
+
+**Grupo.** \(y^2 = x^3+Ax+B\) en \(\mathbb{F}_p\), más \(\mathcal{O}\). Inverso \((x,-y)\). Suma: \(\lambda = (y_2-y_1)/(x_2-x_1)\). Doble: \(\lambda = (3x^2+A)/(2y)\). \(x_3 = \lambda^2-x_1-x_2\), \(y_3 = \lambda(x_1-x_3)-y_1\). Escalares módulo el orden \(q\), coordenadas módulo \(p\).
+
+**ECDH.** \(U=\alpha G\), \(V=\beta G\), secreto \(\alpha\beta G\). Sin autenticar los puntos hay hombre en el medio. Eso no resuelve el ECDLP.
+
+**ElGamal.** Pública \(Q=dG\). \((R,S)=(iG,\, M+iQ)\). Claro \(S-dR\). Efímero nuevo. Si \(i_j = i_{j-1}+f(j)\) y se conoce un claro, se recuperan los demás sin el logaritmo.
+
+**ECDSA.** \(Y=xP\). \(R=kP\), \(r=x_R \bmod q\), \(s=k^{-1}(h+rx)\). Verifica \(s^{-1}(hP+rY)\). Misma \(k\) dos veces: se obtienen \(k\) y \(x\).
+
+**Hash.** OW: te dan \(t\). SPR: te dan \(m\), pides otro. CR: cualquier pareja. CR \(\Rightarrow\) SPR \(\Rightarrow\) (con matices) OW. Costos \(2^n\) y \(2^{n/2}\).
+
+**Construcciones.** MD: compresión iterada, relleno con longitud, extensión de longitud. Esponja: \(b=r+c\), se absorbe por \(r\), se extrae por \(r\), SHAKE es prefijo. Davies–Meyer: \(E(y,x)\oplus x\).
+
+**Contraseñas.** No guardar \(H(pw)\). Sal pública por registro. Costo \(d\). El diccionario sobre una copia sigue siendo posible si la contraseña es débil. Limitar el login no toca la copia.
+
+**PoW.** \(\mathrm{int}(H(m\|\nu))<T\), promedio \(2^n/T\). Verificar es barato. Reto de un solo uso. La cadena ata \(h_{i-1}\) y se sigue la de mayor trabajo.
+
+**MAC.** Juego: par nuevo, aunque el mensaje sea viejo. HMAC: \(H(k_{\mathrm{out}}\|H(k_{\mathrm{in}}\|m))\). CMAC: AES, máscara \(K_1\) o \(K_2\). Reto aleatorio, se consume. HKDF separa usos con `info`.
+
+**Composición.** EtM es la segura en general: llaves independientes, se etiqueta el criptotexto, se verifica antes de descifrar. MtE y E&M no. AEAD: \(N\) único, \(A\) asociado. GCM no repite nonce.
+
+**Firma.** EUF-CMA: mensaje nuevo. Hash-luego-firma exige hash resistente a colisiones. MAC no da no repudio. Certificado: nombre atado a \(pk\), anclado en una raíz. Posesión aparte (CertificateVerify). Revocación: CRL u OCSP. Sello sobre \(H(\sigma)\).
+
+**Puente.** El hash no autentica. La MAC autentica a quien tiene \(k\). La firma autentica ante quien solo tiene \(pk\). La curva fabrica el secreto (ECDH, ElGamal) o la firma (ECDSA). HKDF convierte el secreto de ECDH en \(k_E\) y \(k_M\).
+
+---
+
+## Diez preguntas con más probabilidad
+
+Están elegidas porque están en las diapositivas y, a la vez, en el banco o en el cuaderno. No son un temario secreto: son las que un profesor puede calificar con una rúbrica corta.
+
+1. **Escribe los tres juegos del hash y demuestra que colisión resistente implica segunda-preimagen resistente.** Está textual en el banco, ejercicio 1, y en las diapositivas 4 a 6.
+2. **¿Por qué una colisión cuesta del orden de \(2^{n/2}\) y qué tiene eso que ver con los 256 bits de SHA-256?** Diapositiva del cumpleaños y ejercicio 2.
+3. **Describe Merkle–Damgård y la esponja, y di cuál sufre extensión de longitud.** Diapositivas 10 a 17. La extensión es la consecuencia que conecta con HMAC.
+4. **¿Cómo se guardan contraseñas y qué ataque sobrevive?** Diapositivas 19 a 21 y el cuaderno: sal, costo, diccionario fuera de línea.
+5. **Escribe la suma de dos puntos y la correctitud de ECDSA.** Ejercicio 5 del banco y diapositivas 12 a 14.
+6. **¿Qué pasa si ECDSA reutiliza \(k\)?** Diapositiva 15. Es el fallo que ya viene redactado como pregunta.
+7. **Explica el hombre en el medio de ECDH y di qué propiedad falta.** Ejercicio 7. No digas que se rompió el logaritmo.
+8. **Juego del MAC, HMAC frente a \(H(k\|m)\), y encrypt-then-MAC frente a las otras composiciones.** Diapositivas 5, 7 y 17.
+9. **Reto–respuesta: por qué el reto se consume, y por qué \(k = H(pw)\) permite un diccionario.** Diapositivas 11 y 13.
+10. **Hash-luego-firma con una colisión, y una aplicación en la que un tercero verifica (certificado, actualización o sello).** Ejercicio 4 y diapositivas 7, 17 a 30.
+
+Si solo puedes hacer diez cosas el último día, haz estas diez con el cuaderno cerrado.

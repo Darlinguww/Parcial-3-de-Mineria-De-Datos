@@ -1,0 +1,943 @@
+# Guía de estudio — Parcial de Criptografía
+
+Universidad del Norte. Material alineado con las diapositivas de funciones hash, MAC y firmas digitales, con el banco de ejercicios y con los cuadernos de hash, firmas y Schnorr.
+
+**Supuestos, porque el tiempo exacto y el formato no venían llenos.** El tablero define cuatro temas. Tienes 2 días. El plan de la parte 3 usa **6 horas de estudio enfocado por día**. Si dispones de 4, estudia solo las cajas marcadas como núcleo. Se asume examen **escrito**, con aritmética modular a mano (sin calculadora): todos los números de esta guía caben en ese formato. La palabra de las diapositivas es **llave**; el banco dice **clave**. Son lo mismo.
+
+**Cómo leer cada tema.** Primero la intuición. Después el juego de seguridad. Después el algoritmo, con un ejemplo numérico ya calculado. Al final, el error que el profesor puede poner en un protocolo.
+
+---
+
+## Mapa corto (el mapa completo está al final de esta guía)
+
+| Primitiva | Secreto | Qué garantiza | Qué no garantiza |
+| --- | --- | --- | --- |
+| Hash | Ninguno | Resumen corto, difícil de invertir o de colisionar | Integridad frente a un adversario que reescribe el mensaje y el resumen |
+| MAC | Llave simétrica compartida | Integridad y autenticación del origen entre quienes tienen la llave | Que un tercero pueda verificar; no repudio |
+| Firma | Llave privada; la pública es verificable | Integridad, origen y no repudio ante terceros | Confidencialidad |
+| Curva elíptica | El escalar (llave privada o efímero) | Grupo donde el logaritmo discreto se cree difícil: ECDH, ElGamal, ECDSA | Por sí sola, autenticación del interlocutor |
+
+El hash entra en la firma (hash-luego-firma y el resumen de ECDSA), en HMAC, en HKDF y en las contraseñas. La MAC y la firma resuelven integridad con modelos distintos. ECDH produce el secreto que HKDF convierte en llaves de cifrado y de MAC.
+
+---
+
+# Tema 1. Curvas elípticas
+
+## 1.1 Intuición
+
+Una curva elíptica, con la suma de puntos, es un **grupo**. Puedes “sumar” puntos y obtener otro punto de la curva. Sumar un punto consigo mismo muchas veces (multiplicación escalar) es fácil. Dado el resultado, recuperar cuántas veces sumaste es el **problema del logaritmo discreto en la curva** (ECDLP). Ahí se apoyan ECDH, ElGamal sobre curvas y ECDSA.
+
+No hace falta la geometría de los reales en el examen. Hace falta: la ley de grupo, las fórmulas módulo un primo, y saber qué es secreto en cada construcción.
+
+## 1.2 El grupo
+
+Para un primo \(p > 3\) y \(A, B\) tales que el discriminante no se anula,
+
+\[
+4A^3 + 27B^2 \not\equiv 0 \pmod p,
+\]
+
+la curva es
+
+\[
+E(\mathbb{F}_p) = \{\, (x,y) \in \mathbb{F}_p^2 : y^2 \equiv x^3 + Ax + B \pmod p \,\} \cup \{\mathcal{O}\}.
+\]
+
+\(\mathcal{O}\) es el **punto al infinito**, la identidad.
+
+La operación \(+\) cumple las propiedades de grupo abeliano:
+
+1. **Cierre.** \(P+Q\) es un punto de la curva o \(\mathcal{O}\).
+2. **Asociatividad.** \((P+Q)+R = P+(Q+R)\).
+3. **Identidad.** \(P+\mathcal{O} = P\).
+4. **Inverso.** Si \(P = (x,y)\), entonces \(-P = (x,\, -y \bmod p)\) y \(P+(-P) = \mathcal{O}\).
+5. **Conmutatividad.** \(P+Q = Q+P\).
+
+Por ser grupo, la multiplicación escalar está bien definida:
+
+\[
+0\cdot P = \mathcal{O}, \qquad kP = (k-1)P + P \quad (k \ge 1).
+\]
+
+En un grupo abeliano da igual el orden de las sumas, así que \(\alpha(\beta G) = \beta(\alpha G) = (\alpha\beta)G\). Esa igualdad es el corazón de ECDH.
+
+**Notación del curso.** Las diapositivas de ECDSA usan un punto base \(P\) de orden primo \(q\), llave privada \(x\) y pública \(Y = xP\). El banco usa \(G\), orden primo \(q\), privada \(\alpha\) y pública \(U = \alpha G\). Misma idea.
+
+## 1.3 Suma de puntos, paso a paso
+
+Sean \(P = (x_1,y_1)\), \(Q = (x_2,y_2)\), curva \(y^2 = x^3 + Ax + B\) módulo \(p\).
+
+**Caso identidad.** Si \(P = \mathcal{O}\), el resultado es \(Q\). Si \(Q = \mathcal{O}\), el resultado es \(P\).
+
+**Caso inverso.** Si \(x_1 = x_2\) y \(y_1 \equiv -y_2 \pmod p\), el resultado es \(\mathcal{O}\).
+
+**Caso suma \(P \neq \pm Q\).**
+
+\[
+\lambda \equiv (y_2 - y_1)\,(x_2 - x_1)^{-1} \pmod p
+\]
+
+\[
+x_3 \equiv \lambda^2 - x_1 - x_2, \qquad y_3 \equiv \lambda(x_1 - x_3) - y_1 \pmod p.
+\]
+
+**Caso doble \(P = Q\) y \(y_1 \not\equiv 0\).**
+
+\[
+\lambda \equiv (3x_1^2 + A)\,(2y_1)^{-1} \pmod p
+\]
+
+y las mismas fórmulas de \(x_3, y_3\).
+
+El inverso modular se calcula con el pequeño teorema de Fermat o con Euclides extendido: \(a^{-1} \equiv a^{p-2} \pmod p\) si \(p\) es primo y \(a \not\equiv 0\).
+
+### Ejemplo numérico (núcleo)
+
+Curva de trabajo de toda la guía:
+
+\[
+E: y^2 \equiv x^3 + 2x + 2 \pmod{17}.
+\]
+
+El discriminante no se anula. Hay 19 puntos contando \(\mathcal{O}\). El orden 19 es primo, así que **cualquier punto distinto de \(\mathcal{O}\) genera el grupo**. Tomamos
+
+\[
+G = (5,1).
+\]
+
+**Doble \(2G\).** \(A = 2\), \(x_1 = 5\), \(y_1 = 1\).
+
+\[
+3(5)^2 + 2 = 77 \equiv 9 \pmod{17}, \qquad 2y_1 = 2, \qquad 2^{-1} \equiv 9,
+\]
+
+porque \(2 \cdot 9 = 18 \equiv 1\). Entonces \(\lambda \equiv 9 \cdot 9 = 81 \equiv 13\).
+
+\[
+x_3 \equiv 13^2 - 5 - 5 = 169 - 10 \equiv 16 - 10 = 6, \qquad y_3 \equiv 13(5-6) - 1 = -14 \equiv 3.
+\]
+
+\[
+2G = (6,3).
+\]
+
+**Suma \(G + 2G\).** \(G = (5,1)\), \(2G = (6,3)\).
+
+\[
+\lambda \equiv (3-1)(6-5)^{-1} = 2 \cdot 1 = 2.
+\]
+
+\[
+x_3 \equiv 4 - 5 - 6 = -7 \equiv 10, \qquad y_3 \equiv 2(5-10) - 1 = -11 \equiv 6.
+\]
+
+\[
+3G = (10,6).
+\]
+
+Tabla de múltiplos (útala en ECDSA y en ElGamal; no la rederives entera en el examen si te la dan):
+
+| \(k\) | \(kG\) | \(k\) | \(kG\) |
+| --- | --- | --- | --- |
+| 1 | (5, 1) | 10 | (7, 11) |
+| 2 | (6, 3) | 11 | (13, 10) |
+| 3 | (10, 6) | 12 | (0, 11) |
+| 4 | (3, 1) | 13 | (16, 4) |
+| 5 | (9, 16) | 14 | (9, 1) |
+| 6 | (16, 13) | 15 | (3, 16) |
+| 7 | (0, 6) | 16 | (10, 11) |
+| 8 | (13, 7) | 17 | (6, 14) |
+| 9 | (7, 6) | 18 | (5, 16) |
+|  |  | 19 | \(\mathcal{O}\) |
+
+Comprueba de un vistazo que \(18G = -G = (5, -1 \bmod 17) = (5, 16)\) y que \(19G = \mathcal{O}\).
+
+## 1.4 Multiplicación escalar y escalera de Montgomery
+
+En la práctica no se suma \(k\) veces. **Doblar y sumar** recorre los bits de \(k\): dobla siempre y suma \(P\) solo si el bit es 1. Hace \(O(\log k)\) operaciones de grupo. Una implementación que ramifica según el bit filtra \(k\) por tiempo o por consumo (canal lateral).
+
+La **escalera de Montgomery** del banco hace, para cada bit, una suma y un doble, cambiando solo el orden:
+
+```text
+R0 := O
+R1 := P
+para cada bit k_i de k, del más significativo al menos:
+    si k_i = 0:
+        R1 := R0 + R1
+        R0 := 2 R0
+    si k_i = 1:
+        R0 := R0 + R1
+        R1 := 2 R1
+devolver R0
+```
+
+**Invariante** (ejercicio 6). Si \(k_{\text{parcial}}\) es el entero leído hasta ahora,
+
+\[
+R_0 = k_{\text{parcial}} P, \qquad R_1 = (k_{\text{parcial}}+1)P.
+\]
+
+Al empezar, el primer bit significativo es 1, así que tras ese bit \(k_{\text{parcial}} = 1\), \(R_0 = P\), \(R_1 = 2P\).
+
+- Si el bit nuevo es 0, el prefijo pasa de \(t\) a \(2t\). Había \(R_0 = tP\), \(R_1 = (t+1)P\). El algoritmo deja \(R_1 \leftarrow tP + (t+1)P = (2t+1)P\) y \(R_0 \leftarrow 2(tP) = (2t)P\).
+- Si el bit nuevo es 1, el prefijo pasa de \(t\) a \(2t+1\). Queda \(R_0 \leftarrow (2t+1)P\) y \(R_1 \leftarrow 2(t+1)P = (2t+2)P\).
+
+Al terminar, \(R_0 = kP\). Misma complejidad asintótica que doblar y sumar, \(O(\ell)\) sumas y dobles para \(\ell\) bits, con patrón regular.
+
+## 1.5 ECDH
+
+Parámetros públicos: curva, \(G\) de orden primo \(q\).
+
+1. Alicia elige \(\alpha \in \{1,\ldots,q-1\}\) y envía \(U = \alpha G\).
+2. Bob elige \(\beta\) y envía \(V = \beta G\).
+3. Alicia calcula \(\alpha V\). Bob calcula \(\beta U\).
+
+\[
+\alpha(\beta G) = \beta(\alpha G) = (\alpha\beta)G.
+\]
+
+El secreto compartido es ese punto, o una codificación de su coordenada. En las diapositivas de MAC, \(s = \mathrm{Encode}(abG)\) entra después a HKDF. Los puntos públicos se suponen auténticos: ECDH solo no autentica.
+
+**Ejemplo.** \(\alpha = 3\), \(\beta = 5\), \(G = (5,1)\).
+
+\[
+U = 3G = (10,6), \quad V = 5G = (9,16), \quad 15G = (3,16).
+\]
+
+Ambos obtienen \((3,16)\).
+
+**Hombre en el medio (ejercicio 7).** Mallory sustituye los puntos. Elige \(\alpha_M = 2\) y \(\beta_M = 2\).
+
+- A Alicia le entrega \(V' = 2G = (6,3)\). Alicia calcula \(3\cdot 2\,G = 6G = (16,13)\). Esa llave la comparte con Mallory, no con Bob.
+- A Bob le entrega \(U' = 2G\). Bob calcula \(5\cdot 2\,G = 10G = (7,11)\). Otra llave, solo con Mallory.
+
+Alicia y Bob no comparten secreto. Esto **no** resuelve el problema de Diffie–Hellman: Mallory no calculó \(\alpha\beta G\) a partir de \(U\) y \(V\). Rompe la **autenticidad del canal**. Falta autenticar los puntos públicos (certificado, firma, MAC con una llave ya establecida, o un PAKE si el secreto compartido es una contraseña).
+
+## 1.6 ElGamal sobre la curva
+
+Llave privada \(d \in \{1,\ldots,q-1\}\). Llave pública \(Q = dG\).
+
+El mensaje tiene que ser un **punto** \(M \in E(\mathbb{F}_p)\). Para cifrar, Bob elige un efímero \(i\) y envía
+
+\[
+R = iG, \qquad S = M + iQ.
+\]
+
+Descifrado, con la privada:
+
+\[
+S - dR = M + i(dG) - d(iG) = M.
+\]
+
+**Ejemplo.** \(d = 3\), \(Q = (10,6)\), mensaje \(M = 7G = (0,6)\), efímero \(i = 5\).
+
+\[
+R = 5G = (9,16), \qquad iQ = 15G = (3,16).
+\]
+
+Suma \(M + iQ = (0,6) + (3,16)\):
+
+\[
+\lambda \equiv (16-6)\cdot 3^{-1} = 10 \cdot 6 = 60 \equiv 9 \pmod{17},
+\]
+
+\[
+x_3 \equiv 81 - 0 - 3 \equiv 13 - 3 = 10, \qquad y_3 \equiv 9(0-10) - 6 \equiv 6.
+\]
+
+Criptotexto \((R,S) = ((9,16),\,(10,6))\). Al descifrar, \(dR = 15G = (3,16)\), y \((10,6) + (3,1) = (0,6) = M\). El inverso de \((3,16)\) es \((3,1)\).
+
+**PRG defectuoso (ejercicio 8, versión B).** Los efímeros cumplen \(i_j \equiv i_{j-1} + f(j) \pmod q\) con \(f\) pública. Oscar conoce el último claro \(M_n\) y todos los pares \((R_j, S_j)\).
+
+1. El enmascarado del último es público una vez conocido el claro: \(T_n = i_n Q = S_n - M_n\).
+2. Como \(f(j)Q\) se puede calcular, \(T_{j-1} = T_j - f(j)Q\). Se baja hasta \(T_1\).
+3. Cada claro es \(M_j = S_j - T_j\).
+
+No hace falta la privada \(d\). La relación entre efímeros destruye la confidencialidad de toda la secuencia. La versión en \(\mathbb{F}_p\) es la misma idea en multiplicativo: \(k_{E,j} = \alpha^{i_j}\), \(y_j = x_j \cdot \beta^{i_j}\), y el enmascarado es \(\beta^{i_j}\).
+
+## 1.7 ECDSA
+
+Parámetros públicos: curva módulo \(p\), punto \(P\) (o \(G\)) de orden primo \(q\). Las coordenadas viven módulo \(p\). Los escalares, módulo \(q\).
+
+**Llaves.** \(x \xleftarrow{\$} \{1,\ldots,q-1\}\), \(Y = xP\). Pública \(Y\), privada \(x\).
+
+**Resumen.** \(t = \min\{|H(M)|, \lceil \log_2 q \rceil\}\) bits de \(H(M)\), de izquierda a derecha, leídos como entero. En el banco, para simplificar, \(H\) ya cae en \(\mathbb{Z}_q\).
+
+**Firma** (nonce aleatorio, como las diapositivas).
+
+1. \(h \leftarrow \mathrm{Resumen}_q(M)\).
+2. Repetir: elegir \(k \in \{1,\ldots,q-1\}\), \(R \leftarrow kP\), \(r \leftarrow x_R \bmod q\), \(s \leftarrow k^{-1}(h + rx) \bmod q\), hasta que \(r \neq 0\) y \(s \neq 0\).
+3. Devolver \((r,s)\).
+
+\(x_R\) es la primera coordenada de \(R\), entre \(0\) y \(p-1\).
+
+**Verificación.**
+
+1. Rechazar si \((r,s)\) no está en \(\{1,\ldots,q-1\}^2\).
+2. \(h \leftarrow \mathrm{Resumen}_q(M)\), \(w \leftarrow s^{-1} \bmod q\).
+3. \(a \leftarrow hw \bmod q\), \(b \leftarrow rw \bmod q\).
+4. \(R' \leftarrow aP + bY\). Si \(R' = \mathcal{O}\), rechazar.
+5. Aceptar si y solo si \(x_{R'} \bmod q = r\).
+
+**Correctitud** (hay que saber escribirla).
+
+\[
+R' = s^{-1} h\, P + s^{-1} r\, Y = s^{-1}(h + rx)P.
+\]
+
+De la firma, \(s \equiv k^{-1}(h+rx) \pmod q\), luego \(h+rx \equiv ks \pmod q\) y \(s^{-1}(h+rx) \equiv k \pmod q\). Como el orden de \(P\) es \(q\),
+
+\[
+R' = kP = R, \qquad x_{R'} \bmod q = r.
+\]
+
+**Ejemplo.** \(x = 3\), \(Y = 3G = (10,6)\), \(h = 8\), \(k = 5\), \(q = 19\).
+
+\[
+R = 5G = (9,16), \quad r = 9.
+\]
+
+\[
+k^{-1} \equiv 4 \pmod{19}, \quad h + rx = 8 + 9\cdot 3 = 35 \equiv 16, \quad s \equiv 4\cdot 16 = 64 \equiv 7.
+\]
+
+Firma \((9, 7)\).
+
+Verificación: \(7\cdot 11 = 77 \equiv 1\), así \(w = 11\). \(a = 8\cdot 11 = 88 \equiv 12\), \(b = 9\cdot 11 = 99 \equiv 4\).
+
+\[
+R' = 12G + 4Y = 12G + 4(3G) = 24G = 5G = (9,16).
+\]
+
+\(9 \bmod 19 = 9 = r\). Acepta. \(24 - 19 = 5\).
+
+## 1.8 Errores y ataques que sí entran en el parcial
+
+**Reutilizar el nonce \(k\) con la misma llave**, en dos mensajes con \(h_1 \not\equiv h_2 \pmod q\). Las dos firmas tienen el mismo \(R = kP\) y el mismo \(r\).
+
+\[
+s_1 \equiv k^{-1}(h_1 + rx), \qquad s_2 \equiv k^{-1}(h_2 + rx) \pmod q.
+\]
+
+\[
+k \equiv (h_1 - h_2)(s_1 - s_2)^{-1}, \qquad x \equiv (ks_1 - h_1)\, r^{-1} \pmod q.
+\]
+
+Con el ejemplo: \(h_1 = 8\), \(h_2 = 4\), \(k = 5\), \(x = 3\), \(r = 9\).
+
+\[
+s_1 = 7, \quad s_2 \equiv 4\cdot(4 + 27) \equiv 4\cdot 12 = 48 \equiv 10 \pmod{19}.
+\]
+
+\[
+k \equiv (8-4)(7-10)^{-1} = 4 \cdot (-3)^{-1} = 4 \cdot 16^{-1}.
+\]
+
+\(16\cdot 6 = 96 \equiv 1 \pmod{19}\), así \(16^{-1} = 6\) y \(k \equiv 24 \equiv 5\). Luego
+
+\[
+x \equiv (5\cdot 7 - 8)\cdot 9^{-1} = 27 \cdot 9^{-1} \equiv 8 \cdot 17 = 136 \equiv 3 \pmod{19},
+\]
+
+porque \(9\cdot 17 = 153 \equiv 1\) y \(136 = 7\cdot 19 + 3\). Se recupera la llave privada. Basta un \(k\) conocido, predecible o repetido. En ECDSA, \(r = 0\) o \(s = 0\) se rechazan y se vuelve a sortear \(k\).
+
+**ECDH sin autenticar los puntos.** MITM, sección 1.5.
+
+**Efímero predecible en ElGamal.** Sección 1.6. El efímero de ElGamal y el nonce de ECDSA cumplen el mismo papel: tienen que ser secretos, uniformes y nuevos.
+
+**Confundir los módulos.** Coordenadas módulo \(p = 17\). Escalares \(k, s, r\) módulo el orden \(q = 19\). Mezclarlos invalida la firma aunque la aritmética “se vea bien”.
+
+**Creer que \(r\) es una coordenada completa.** El verificador compara \(x_{R'} \bmod q\) con \(r\), no el punto entero. Por eso en la firma se guarda \(r\), no todo \(R\).
+
+## 1.9 Tabla comparativa
+
+|  | ECDH | ElGamal en la curva | ECDSA |
+| --- | --- | --- | --- |
+| Objetivo | Acordar un secreto | Confidencialidad de un punto | Firma |
+| Llave de largo plazo | \(\alpha\) y \(\beta\), una por lado | Privada \(d\), pública \(Q = dG\) | Privada \(x\), pública \(Y = xP\) |
+| Aleatoriedad por uso | Los dos escalares | Efímero \(i\) de cada cifrado | Nonce \(k\) de cada firma |
+| Se envía | Los puntos públicos | \((iG,\; M + iQ)\) | \((r, s)\) |
+| Si se repite el efímero | Se repite el secreto de sesión | Se relacionan los claros | Con dos mensajes se obtiene \(x\) |
+| Problema que se asume difícil | Diffie–Hellman / ECDLP | ECDLP, y efímeros buenos | ECDLP, y nonces buenos |
+
+---
+
+# Tema 2. Funciones hash
+
+## 2.1 Intuición
+
+\(H: \mathcal{M} \to \mathcal{T}\) comprime un mensaje a un resumen corto. Es determinista y rápida. Como \(|\mathcal{M}| > |\mathcal{T}|\), **siempre existen colisiones**. La propiedad criptográfica es que encontrarlas sea inviable.
+
+Un hash **no** autentica. Si Alicia envía \((m, H(m))\) y el adversario puede cambiar los dos, envía \((m', H(m'))\) y Bob acepta. Para integridad hace falta un secreto (MAC) o una llave privada (firma).
+
+## 2.2 Los tres juegos (tal como las diapositivas)
+
+En los tres, “seguro” significa: todo adversario eficiente gana con probabilidad despreciable.
+
+**Preimagen (one-way, OW).** El retador elige \(m\) según una distribución \(D\), entrega \(t = H(m)\) y no entrega \(m\). El adversario gana si devuelve \(m'\) con \(H(m') = t\). En este juego, \(m' = m\) también cuenta.
+
+**Segunda preimagen (SPR).** El retador elige \(m\) y se lo entrega. El adversario gana si devuelve \(m' \neq m\) con \(H(m') = H(m)\).
+
+**Colisión (CR).** \(H\) es pública. El adversario elige los dos mensajes. Gana si \(m_0 \neq m_1\) y \(H(m_0) = H(m_1)\).
+
+**Implicación que enuncia el banco:** resistencia a colisiones \(\Rightarrow\) resistencia a segunda preimagen \(\Rightarrow\) ser de una vía.
+
+La demostración que corresponde a esa flecha va del atacante débil al juego fuerte:
+
+**CR \(\Rightarrow\) SPR.** Si \(A\) rompe SPR, el adversario de colisión elige \(m\), se lo da a \(A\), recibe \(m' \neq m\) con el mismo hash y entrega el par \((m, m')\).
+
+**Por qué el inciso del banco está escrito al revés.** El texto pide “un adversario que rompe SPR sirve para romper OW” y “uno que rompe CR sirve para romper SPR”. Eso probaría las flechas contrarias, y esas flechas son falsas en general. En el examen escribe la reducción de arriba, que es la que prueba la implicación enunciada. Si el profesor insiste en el orden literal de los incisos, la frase correcta sigue siendo: *quien rompe la propiedad más débil se convierte en quien rompe la más fuerte*.
+
+SPR no implica CR: un atacante de colisiones elige los dos mensajes; un atacante de segunda preimagen recibe uno fijo. OW no implica SPR: se pueden construir hashes donde voltear un bit da otra preimagen y, aun así, invertir un resumen aleatorio es difícil.
+
+**CR \(\Rightarrow\) OW en hashes que comprimen mucho** (la forma que sí se puede escribir): el adversario de colisión elige \(m\), calcula \(t = H(m)\), llama al adversario de preimagen sobre \(t\) y obtiene \(m'\). Si \(m' \neq m\), ya tiene colisión. Cuando hay muchísimas preimágenes, \(m' = m\) es improbable.
+
+## 2.3 Costos: fuerza bruta y cumpleaños
+
+Modelo de las diapositivas: hashes de mensajes distintos, independientes y uniformes en un conjunto de tamaño \(N = 2^n\).
+
+| Ataque | Qué se busca | Evaluaciones de referencia |
+| --- | --- | --- |
+| Preimagen | Un \(t\) fijo | Orden de \(2^n\) |
+| Colisión | Cualquier pareja | Orden de \(2^{n/2}\) |
+
+Hay \(\binom{k}{2} = k(k-1)/2\) parejas. Con \(N\) salidas,
+
+\[
+\Pr[\text{al menos una colisión}] \approx 1 - \exp\Bigl(-\frac{k(k-1)}{2N}\Bigr).
+\]
+
+Para \(n = 16\), \(N = 65536\) y \(k = 302\), esa probabilidad es aproximadamente \(0{,}50\). Es el punto de la gráfica de la diapositiva.
+
+Para \(n = 128\), la preimagen pide del orden de \(2^{128}\) evaluaciones y la colisión del orden de \(2^{64}\). La ventaja del cumpleaños es pasar de \(2^{128}\) a \(2^{64}\): un factor \(2^{64}\). Por eso SHA-256 saca **256 bits**: la colisión queda en \(2^{128}\), que es el nivel que se considera fuera de alcance. SHA-1 (160 bits, colisión en \(2^{80}\) y además rota) y MD5 (128 bits) están en la tabla del curso marcados con ataques de colisión reales. No se usan.
+
+## 2.4 Merkle–Damgård
+
+Se parte de una compresión \(h: X \times \{0,1\}^\ell \to X\). Se rellena el mensaje y se parte en bloques de \(\ell\) bits:
+
+\[
+\hat M = M \mathbin\| \mathrm{PB} = m_1 \mathbin\| \cdots \mathbin\| m_s.
+\]
+
+\[
+t_0 = \mathrm{IV}, \qquad t_i = h(t_{i-1}, m_i), \qquad H(M) = t_s.
+\]
+
+El relleno **codifica la longitud**. Con ese relleno, si \(h\) es resistente a colisiones, la iteración también lo es. Sin la longitud dentro del relleno, se fabrican colisiones pegando bloques de forma trivial.
+
+**Davies–Meyer.** A partir de un cifrador de bloque \(E\):
+
+\[
+h_{\mathrm{DM}}(x, y) = E(y, x) \oplus x.
+\]
+
+El bloque del mensaje \(y = m_i\) es la llave del cifrador. El estado \(x = t_{i-1}\) es la entrada. SHA-256 usa la misma idea con SHACAL-2, pero la combinación es suma de palabras módulo \(2^{32}\), escrita \(\boxplus\) en las diapositivas:
+
+\[
+t_i = E_{\mathrm{SHA256}}(m_i, t_{i-1}) \boxplus t_{i-1}.
+\]
+
+El bloque de SHA-256 mide 512 bits y el estado 256. SHA-224 usa la misma compresión, otro IV, y se queda con los primeros 224 bits.
+
+| Función | Bloque | Salida | Comentario del curso |
+| --- | --- | --- | --- |
+| MD5 | 512 | 128 | Colisiones prácticas. Antecedente. |
+| SHA-1 | 512 | 160 | Colisiones prácticas. Antecedente. |
+| SHA-224 | 512 | 224 | Misma compresión que SHA-256, otro IV, truncado. |
+| SHA-256 | 512 | 256 | La de referencia en HMAC y en los cuadernos. |
+| SHA-384 | 1024 | 384 | Familia SHA-2. |
+| SHA-512 | 1024 | 512 | Familia SHA-2. |
+
+**Extensión de longitud.** En Merkle–Damgård, \(H(M)\) es el estado final \(t_s\). Quien conoce \(H(M)\) y la longitud de \(M\) puede recomponer el relleno \(\mathrm{PB}\) y seguir la cadena: calcula \(H(M \mathbin\| \mathrm{PB} \mathbin\| M')\) **sin conocer** \(M\), usando \(H(M)\) como IV. Afecta a MD5, SHA-1 y SHA-256. No afecta a la esponja de SHA-3. Consecuencia directa: \(H(k \mathbin\| m)\) es una MAC insegura, porque el adversario alarga el mensaje y actualiza la etiqueta. HMAC existe, entre otras razones, para cortar este camino.
+
+## 2.5 Esponja
+
+Estado de \(b = r + c\) bits, inicialmente \(0^b\). \(r\) es la **tasa** (rate). \(c\) es la **capacidad**. El mensaje no toca los \(c\) bits de capacidad.
+
+**Absorción**, con el mensaje ya rellenado y partido en bloques de \(r\) bits:
+
+\[
+s_0 = 0^b, \qquad s_i = f\bigl(s_{i-1} \oplus (m_i \mathbin\| 0^c)\bigr).
+\]
+
+\(f\) es una permutación pública de todo el estado.
+
+**Extracción.** \(z_1\) son los primeros \(r\) bits del estado final. Si hacen falta más bits, se aplica \(f\) otra vez y se vuelven a tomar \(r\) bits. La salida de \(v\) bits es el prefijo de \(z_1 \mathbin\| z_2 \mathbin\| \cdots\). La capacidad no se publica.
+
+SHA-3 y SHAKE usan \(f = \mathrm{Keccak}\text{-}f[1600]\), 24 rondas, \(c = 1600 - r\).
+
+| Función | \(r\) (bits) | Salida |
+| --- | --- | --- |
+| SHA3-224 | 1152 | 224 |
+| SHA3-256 | 1088 | 256 |
+| SHA3-384 | 832 | 384 |
+| SHA3-512 | 576 | 512 |
+| SHAKE128 | 1344 | La elige quien pide el resultado |
+| SHAKE256 | 1088 | La elige quien pide el resultado |
+
+SHA3-256 y SHAKE256 comparten \(r = 1088\), \(c = 512\) y la misma \(f\). Los distingue el **sufijo**, que se concatena a \(M\) antes del relleno \(10^j 1\):
+
+| Función | Entrada que se parte | Salida |
+| --- | --- | --- |
+| SHA3-256 | \(M \mathbin\| 01 \mathbin\| 10^j 1\) | primeros 256 bits |
+| SHAKE256 | \(M \mathbin\| 1111 \mathbin\| 10^j 1\) | primeros \(v\) bits |
+
+\(j \ge 0\) es el mínimo para que la longitud sea múltiplo de 1088. Por construcción de la extracción, una salida corta de SHAKE es prefijo de una salida más larga sobre el mismo mensaje. SHA-256 y SHA3-256 tienen la misma longitud y **no** el mismo resumen: son funciones distintas. El cuaderno lo comprueba con el mensaje `orden de un automovil rojo`.
+
+## 2.6 Contraseñas
+
+Registro ingenuo: el servidor guarda \(vk = H(pw)\). En el login comprueba \(H(pw') = vk\). El envío de \(pw\) exige un canal confidencial y autenticado con el servidor. Si se filtra \(vk\), el adversario prueba un diccionario **fuera de línea**: no vuelve a hablar con el servidor. Limitar intentos de login no toca esa copia.
+
+**Sin sal**, una tabla \((w, H(w))\) sirve para todos los usuarios. Si Ana y Beto usan la misma contraseña, sus verificadores son iguales.
+
+**Con sal**, por cada registro:
+
+\[
+\mathrm{salt} \xleftarrow{\$} \{0,1\}^{128}, \qquad y = H(pw, \mathrm{salt}), \qquad \text{se guarda }(\mathrm{salt}, y).
+\]
+
+La sal es pública. Su trabajo no es ser secreta: es impedir que el mismo cómputo sirva para otro registro. El atacante sigue pudiendo probar el diccionario, pero lo paga **por sal**.
+
+Un hash rápido sigue siendo barato. Se sustituye por una derivación con costo \(d\), y el registro queda \((\mathrm{salt}, d, y)\). En el cuaderno, \(d\) es el número de iteraciones de PBKDF2-HMAC-SHA256. Subir \(d\) de 20 000 a 40 000 duplica el costo por candidato y no cambia el tamaño del diccionario. También se puede exigir memoria, para estorbar el hardware paralelo. Nada de esto salva una contraseña que esté en el diccionario: solo encarece cada prueba. Si el diccionario no contiene \(pw\), el atacante no la “encuentra”; eso no demuestra que el almacenamiento sea perfecto, solo que ese diccionario se quedó corto.
+
+Comparar con `compare_digest` (tiempo independiente del contenido) es lo que hace el cuaderno. Una comparación que se detiene en el primer byte distinto filtra el verificador por tiempo.
+
+## 2.7 Prueba de trabajo
+
+Dados datos \(m\) y umbral \(T\), se busca un nonce \(\nu\) con
+
+\[
+\mathrm{int}(H(m \mathbin\| \nu)) < T.
+\]
+
+Buscar es caro. Verificar es un hash y una comparación. Con salidas uniformes de \(n\) bits y \(1 \le T \le 2^n\),
+
+\[
+p = \frac{T}{2^n}, \qquad \mathbb{E}[\text{intentos}] = \frac{2^n}{T}.
+\]
+
+Es una geométrica: una ejecución no tiene por qué caer en el promedio. Si \(T = 2^{n-d}\), se piden \(d\) bits iniciales en cero y el promedio es \(2^d\). Un bit más duplica el promedio. En el cuaderno, con \(d = 12\), el promedio es 4096 y una ejecución concreta hizo 3305 intentos.
+
+Esto **no** es una preimagen. No hay un resumen fijo que igualar: vale cualquier hash por debajo del umbral. Por eso el costo lo manda \(T\), no \(2^n\).
+
+**Mitigar solicitudes caras.** El servidor sortea \(r\), guarda \((m, r, T)\) con caducidad y lo usa una sola vez. El navegador busca \(\mathrm{int}(H(m \mathbin\| r \mathbin\| \nu)) < T\). El servidor verifica, **consume** \(r\) y solo entonces hace el trabajo caro. Un reto vencido o repetido se rechaza. Esto encarece las solicitudes; no impide saturar el enlace.
+
+**Cadena de Nakamoto.**
+
+\[
+h_i = H(h_{i-1} \mathbin\| m_i \mathbin\| \nu_i), \qquad \mathrm{int}(h_i) < T_i.
+\]
+
+Cada bloque ata el hash del anterior. Alterar un bloque obliga a rehacer ese enlace y todas las pruebas posteriores. Los nodos siguen la cadena válida de mayor trabajo acumulado. Si todos los bloques comparten el mismo umbral, más bloques válidos significa más trabajo.
+
+## 2.8 Errores frecuentes
+
+- Tratar \(H(m)\) como MAC o como firma.
+- Creer que la sal es secreta, o que la sal impide el diccionario sobre **ese** registro.
+- Creer que limitar el login detiene un ataque sobre una copia filtrada.
+- Pedir “el promedio” como si cada ejecución de la prueba de trabajo debiera durar exactamente \(2^d\).
+- Usar MD5 o SHA-1 donde se necesita resistencia a colisiones.
+- Usar \(H(k \mathbin\| m)\) como MAC (extensión de longitud).
+- Confundir SHA-256 con SHA3-256, o creer que SHAKE de 16 bytes y de 32 bytes son hashes independientes: el corto es prefijo del largo.
+
+## 2.9 Merkle–Damgård frente a esponja
+
+|  | Merkle–Damgård | Esponja |
+| --- | --- | --- |
+| Pieza interna | Compresión \(h\), a menudo un cifrador (Davies–Meyer) | Permutación pública \(f\) de \(b\) bits |
+| Estado que se publica | El estado final es la salida | Solo \(r\) bits; la capacidad \(c\) no sale |
+| Longitud de salida | Fija (SHA-256: 256) | Fija en SHA-3; variable en SHAKE, por extracción repetida |
+| Relleno | Incluye la longitud del mensaje | Sufijo de dominio y relleno \(10^*1\) |
+| Extensión de longitud | Sí, en MD5, SHA-1, SHA-2 | No, en SHA-3 |
+| Ejemplos del curso | MD5, SHA-1, SHA-224/256/384/512 | SHA3-224/256/384/512, SHAKE128/256 |
+
+---
+
+# Tema 3. MAC
+
+## 3.1 Intuición
+
+Alicia y Bob comparten una llave secreta \(k\). Alicia adjunta una etiqueta \(t = S(k, m)\). Bob acepta solo si \(V(k, m, t) = 1\). Quien no tiene \(k\) no debe poder fabricar una etiqueta nueva.
+
+El mensaje puede ir en claro. La MAC no cifra. Verificar un par válido por segunda vez **vuelve a aceptar**: la MAC sola no detecta repetición. Hace falta un reto de un solo uso, un contador o un nonce, según el protocolo.
+
+## 3.2 Juego de seguridad
+
+El retador sortea \(k\) y pone \(Q = \emptyset\). El adversario pide \(m_i\) y recibe \(t_i = S(k, m_i)\). Esas consultas son adaptativas. Al final entrega \((m^\star, t^\star)\).
+
+Gana si \((m^\star, t^\star) \notin Q\) y \(V(k, m^\star, t^\star) = 1\).
+
+El par tiene que ser nuevo. El mensaje puede haberse consultado antes: una etiqueta distinta sobre un mensaje ya preguntado también es falsificación. Es la definición de las diapositivas (falsificación fuerte).
+
+Un MAC es seguro si todo adversario eficiente gana con probabilidad despreciable.
+
+**MAC trivial, ejercicio 3.** \(S(k, m) = 0^\ell\) y \(V\) acepta si \(t = 0^\ell\). El adversario ni siquiera consulta: entrega \((m, 0^\ell)\) y gana con probabilidad 1. La ventaja no es despreciable. No cumple la definición, aunque \(V\) acepte lo que \(S\) produce (correctitud sí; seguridad no).
+
+## 3.3 HMAC
+
+HMAC construye la MAC con un hash. De una sola llave salen dos bloques, \(k_{\mathrm{in}}\) y \(k_{\mathrm{out}}\).
+
+Sea \(B\) el tamaño de bloque del hash (64 bytes en SHA-256). Si \(k\) es más larga que \(B\), se reemplaza por \(H(k)\). Se rellena con ceros hasta \(B\) bytes: eso es \(k'\).
+
+\[
+k_{\mathrm{in}} = k' \oplus \mathrm{ipad}, \qquad k_{\mathrm{out}} = k' \oplus \mathrm{opad}.
+\]
+
+\(\mathrm{ipad}\) es el byte `0x36` repetido \(B\) veces. \(\mathrm{opad}\) es `0x5c` repetido \(B\) veces.
+
+\[
+d = H(k_{\mathrm{in}} \mathbin\| m), \qquad t = S(k, m) = H(k_{\mathrm{out}} \mathbin\| d).
+\]
+
+Verificar es recalcular \(t'\) y aceptar si \(t' = t\). La comparación tiene que recorrer toda la etiqueta.
+
+| Esquema | Pieza | Etiqueta completa, sin truncar |
+| --- | --- | --- |
+| HMAC-SHA256 | SHA-256 | 256 bits |
+| HMAC-SHA512 | SHA-512 | 512 bits |
+
+**Por qué no basta \(H(k \mathbin\| m)\).** Con un hash Merkle–Damgård, la extensión de longitud produce una etiqueta válida de un mensaje más largo sin conocer \(k\). El hash externo de HMAC, que vuelve a meter un secreto, corta esa extensión: el estado interno \(d\) no es la etiqueta que ve el adversario.
+
+**Ejemplo didáctico, no es SHA-256.** Bloque de 1 byte, \(H\) igual a la XOR de todos los bytes, \(k = \mathtt{0x4B}\), \(m = \mathtt{0x01\,0x02}\).
+
+\[
+k_{\mathrm{in}} = \mathtt{0x4B} \oplus \mathtt{0x36} = \mathtt{0x7D}, \qquad k_{\mathrm{out}} = \mathtt{0x4B} \oplus \mathtt{0x5C} = \mathtt{0x17}.
+\]
+
+\[
+d = \mathtt{0x7D} \oplus \mathtt{0x01} \oplus \mathtt{0x02} = \mathtt{0x7E}, \qquad t = \mathtt{0x17} \oplus \mathtt{0x7E} = \mathtt{0x69}.
+\]
+
+Sirve para seguir el cableado. La seguridad real es la de HMAC-SHA256, no la de esta XOR.
+
+## 3.4 CMAC
+
+CMAC autentica con AES, en bloques de 128 bits. Es un CBC-MAC arreglado para mensajes de longitud variable.
+
+1. \(L = \mathrm{AES}_k(0^{128})\).
+2. De \(L\) se derivan dos máscaras, \(K_1\) y \(K_2\), con un desplazamiento y, si el bit alto era 1, una XOR con la constante de 128 bits `0x87` (NIST SP 800-38B, que es la referencia de la diapositiva).
+3. Se cifra en cadena: cada bloque entra por XOR con la salida anterior. El estado inicial es \(0^{128}\).
+4. Si el último bloque está completo, se le hace XOR con \(K_1\). Si está incompleto, se rellena con `1` seguido de ceros y se usa \(K_2\). El mensaje vacío se trata como bloque incompleto.
+5. La etiqueta completa es la salida AES de ese último bloque: 128 bits.
+
+Verificar es recalcular y comparar.
+
+HMAC necesita un hash. CMAC necesita un cifrador de bloque. Los dos autentican longitud variable. En el curso las etiquetas se muestran completas, sin truncar.
+
+## 3.5 Reto–respuesta
+
+Alicia y Bob comparten \(k\) aleatoria.
+
+1. Bob sortea \(c \xleftarrow{\$} \{0,1\}^{128}\). Si ese reto ya se emitió con esta llave, sortea otro.
+2. Lo guarda como pendiente y se lo envía a Alicia.
+3. Alicia responde \(t = S(k, c)\).
+4. Bob acepta solo si \(c\) sigue pendiente y \(V(k, c, t) = 1\). Al aceptar, **borra** \(c\): esa respuesta no se vuelve a admitir.
+
+Así se mata la repetición, que la MAC sola no ve. CRYPTOCard RB-1 es el ejemplo del curso: el usuario transcribe el reto y la respuesta; no teclea \(k\).
+
+**Si \(k = H(pw)\) con un hash rápido**, observar \((c, t)\) permite probar el diccionario fuera de línea: \(k' = H(pw')\), \(t' = \mathrm{HMAC}(k', c)\), y se compara con \(t\). Eso no rompe HMAC. Rompe la contraseña. Una derivación costosa encarece cada candidato y no impide comprobarlos.
+
+## 3.6 HKDF
+
+Alicia y Bob ya tienen un secreto de Diffie–Hellman. En la diapositiva, \(s = \mathrm{Encode}(abG)\), y los puntos públicos se asumen auténticos. HKDF usa HMAC para sacar llaves de uso distinto. La sal es pública e independiente de \(s\). El uso viaja en `info`.
+
+**Extract** (RFC 5869):
+
+\[
+\mathrm{PRK} = \mathrm{HMAC}(\mathrm{salt},\, s).
+\]
+
+Si no hay sal, se usan ceros de la longitud del hash.
+
+**Expand.** \(T(0)\) es vacío y el contador \(i\) es un byte:
+
+\[
+T(i) = \mathrm{HMAC}\bigl(\mathrm{PRK},\; T(i-1) \mathbin\| \mathrm{info} \mathbin\| i\bigr).
+\]
+
+La llave son los primeros \(L\) bytes de \(T(1) \mathbin\| T(2) \mathbin\| \cdots\).
+
+En el ejemplo del curso se piden dos llaves de 32 bytes:
+
+- \(\mathrm{info} = \text{“cifrado”}\) produce \(k_E\).
+- \(\mathrm{info} = \text{“autenticacion”}\) produce \(k_M\).
+
+No se usa el mismo bloque de bytes para cifrar y para autenticar.
+
+## 3.7 Cifrado autenticado y composición genérica
+
+Hay tres formas genéricas de juntar un cifrado y una MAC. Solo una es segura en general.
+
+**Encrypt-then-MAC**, la de las diapositivas y el teorema 9.2 de Boneh–Shoup.
+
+1. \(c \leftarrow \mathrm{Enc}_{k_E}(m)\). Si hay IV, va dentro de lo que se autentica.
+2. \(t = S(k_M, c)\).
+3. Se envía \((c, t)\).
+4. El receptor **verifica primero**. Si la etiqueta falla, rechaza y no descifra.
+
+Hace falta: cifrado seguro contra texto claro elegido, MAC segura, y llaves independientes. Con esas hipótesis hay confidencialidad e integridad.
+
+**MAC-then-encrypt.** Se autentica el claro y luego se cifra \((m, t)\). No es seguro en general. El ejemplo clásico es un cifrado con relleno: el descifrado puede delatar, con un error distinto o con el tiempo, si el relleno era válido. El adversario usa ese oráculo para alterar el criptotexto sin romper la MAC. No hace falta recordar un exploit byte a byte; sí hace falta decir que se descifra antes de saber si el paquete es auténtico, y que eso filtra.
+
+**Encrypt-and-MAC.** Se envía \((c, S(k_M, m))\). La etiqueta del claro puede filtrar información del mensaje (una MAC determinista repite etiqueta cuando se repite el claro). Tampoco es seguro en general.
+
+**AEAD.** Un solo esquema, una llave \(K\):
+
+\[
+(C, T) = \mathrm{Enc}_K(N, M, A), \qquad \mathrm{Dec}_K(N, C, T, A) \in \{M, \bot\}.
+\]
+
+\(N\) es un nonce público que **no se repite** con la misma llave. \(A\) son datos asociados (una cabecera): se autentican y no se cifran. \(M\) queda confidencial. \(C\) es el criptotexto y \(T\) la etiqueta.
+
+**GCM** es encrypt-then-MAC con una sola llave AES: el mensaje se cifra con AES-CTR bajo \((K, N)\); GHASH, con una llave \(\eta\) derivada de \(K\), procesa \(A\), \(C\) y las longitudes; una máscara de AES derivada de \(K\) y \(N\) se combina con ese resultado para formar \(T\). GHASH sola no es una MAC segura. Se verifica antes de usar el claro. Repetir el nonce con la misma llave rompe la garantía.
+
+## 3.8 Errores frecuentes
+
+- Confundir hash con MAC.
+- Aceptar un reto ya consumido (rejuego).
+- Derivar la llave del reto como \(H(pw)\) con hash rápido.
+- Usar \(k_E = k_M\), o autenticar el claro y dejar el IV fuera de la MAC.
+- Descifrar antes de verificar.
+- Repetir el nonce de GCM.
+- Creer que HKDF “es un hash del secreto” sin sal ni `info`: entonces no se separan los usos.
+
+## 3.9 HMAC frente a CMAC
+
+|  | HMAC | CMAC |
+| --- | --- | --- |
+| Primitiva | Hash (SHA-256, SHA-512) | Cifrador de bloque (AES) |
+| Etiqueta completa | 256 o 512 bits | 128 bits |
+| Cómo entra la llave | Dos máscaras, ipad y opad, y dos hashes | Subllaves \(K_1, K_2\) y un CBC-MAC |
+| Longitud variable | Sí | Sí, con relleno distinto si el último bloque viene corto |
+| Verificar | Recalcular y comparar | Recalcular y comparar |
+| Para qué la usa el curso | MAC, reto–respuesta, HKDF | Ejemplo de MAC con AES |
+
+---
+
+# Tema 4. Firmas digitales
+
+## 4.1 Intuición
+
+Alicia firma una orden con su llave privada. Bob, y cualquier tercero, verifican con la llave pública. Si Alicia y Bob hubieran usado una MAC, el tercero no podría verificar: no tiene la llave, y si se la dieran podría fabricar etiquetas y acusar a Alicia. La firma separa **quien puede firmar** de **quien puede verificar**. Eso es el no repudio.
+
+Tres algoritmos.
+
+\[
+(pk, sk) \xleftarrow{\$} \mathrm{Gen}(), \qquad \sigma \leftarrow \mathrm{Firma}(sk, M), \qquad v \leftarrow \mathrm{Ver}(pk, M, \sigma).
+\]
+
+**Correctitud.** Para toda llave generada y todo mensaje permitido, si \(\sigma\) salió de \(\mathrm{Firma}(sk, M)\), entonces \(\mathrm{Ver}(pk, M, \sigma) = 1\).
+
+## 4.2 Juego EUF-CMA
+
+El retador genera **un** par \((pk, sk)\) y entrega solo \(pk\). El adversario pide firmas de mensajes \(M_i\) que él elige al ver las respuestas anteriores. El retador acumula esos \(M_i\) en \(Q\). Al final el adversario entrega \((M^\star, \sigma^\star)\).
+
+Gana si \(\mathrm{Ver}(pk, M^\star, \sigma^\star) = 1\) y \(M^\star \notin Q\).
+
+La probabilidad de ganar tiene que ser despreciable para todo adversario eficiente. A diferencia de la MAC de las diapositivas, aquí el mensaje firmado tiene que ser nuevo: es falsificación existencial bajo mensaje elegido.
+
+## 4.3 Hash-luego-firma
+
+Si \((\mathrm{Gen}, \mathrm{Firma}_0, \mathrm{Ver}_0)\) solo firma mensajes de longitud fija, y \(H\) cae en esa longitud,
+
+\[
+\mathrm{Firma}(sk, M) = \mathrm{Firma}_0(sk, H(M)), \qquad \mathrm{Ver}(pk, M, \sigma) = \mathrm{Ver}_0(pk, H(M), \sigma).
+\]
+
+Si \(H(m_0) = H(m_1)\) con \(m_0 \neq m_1\), el adversario pide la firma de \(m_0\) y la entrega junto con \(m_1\). Verifica, y \(m_1\) no fue consultado. Es una falsificación existencial. Por eso hace falta un hash resistente a colisiones, además del esquema base seguro. El ataque no necesita romper la firma base.
+
+## 4.4 RSA-PKCS#1 v1.5
+
+**Llaves.** Primos distintos \(p, q\), \(n = pq\), \(\varphi(n) = (p-1)(q-1)\), exponente \(e\) coprimo con \(\varphi(n)\), \(d = e^{-1} \bmod \varphi(n)\). Pública \((n, e)\), privada \((n, d)\).
+
+\[
+(y^d \bmod n)^e \equiv y \pmod n.
+\]
+
+**Codificación.** \(n\) ocupa \(\ell\) bytes. Con SHA-256 hace falta \(\ell \ge 62\).
+
+\[
+D = \mathtt{00}\,\mathtt{01}\,\mathtt{FF}\cdots\mathtt{FF}\,\mathtt{00}\,\mathrm{DI}\,H(M).
+\]
+
+\(\mathrm{DI}\) son los 19 bytes que identifican SHA-256. \(H(M)\) son 32 bytes. El relleno \(\mathtt{FF}\) mide al menos 8 bytes. Para un módulo de 2048 bits, \(\ell = 256\) y el relleno ocupa 202 bytes:
+
+\[
+1+1+202+1+19+32 = 256.
+\]
+
+**Firma.** \(D \leftarrow \mathrm{Codificar}_\ell(M)\), \(y \leftarrow \mathrm{entero}(D)\) en big-endian, \(a \leftarrow y^d \bmod n\), devolver \(a\) en exactamente \(\ell\) bytes.
+
+**Verificación.** La firma tiene que ocupar \(\ell\) bytes y el entero tiene que ser menor que \(n\). Se calcula \(D' = \mathrm{bytes}_\ell(a^e \bmod n)\) y se acepta solo si \(D'\) es exactamente \(\mathrm{Codificar}_\ell(M)\).
+
+**Ejemplo de la operación, no de PKCS#1.** El cuaderno usa \(p = 61\), \(q = 53\), \(n = 3233\), \(e = 17\), \(\varphi(n) = 3120\), \(d = 2753\). El representante didáctico es \(y = 2983\).
+
+\[
+2983^{2753} \equiv 2466 \pmod{3233}, \qquad 2466^{17} \equiv 2983 \pmod{3233}.
+\]
+
+El cuaderno avisa que este \(y\) es el entero del SHA-256 reducido módulo \(n\), no el bloque PKCS#1, y que \(n = 61\cdot 53\) se factoriza a simple vista. Sirve para ver el par \((y^d,\; a^e)\).
+
+## 4.5 ECDSA, otra vez, ahora como firma
+
+El algoritmo, la correctitud y el nonce están en el tema 1. En el tema de firmas se usan así:
+
+- ECDSA es la firma del cuaderno sobre P-256 y SHA-256, y la de las diapositivas con \(\mathrm{Resumen}_q\).
+- Cambiar un byte del archivo hace fallar la verificación.
+- Otra llave pública hace fallar la verificación: la firma no es transferable a otro firmante.
+- \(s = 0\) se rechaza.
+- Cada componente tiene que estar en \(\{1,\ldots,q-1\}\).
+
+La firma no cifra el archivo. El dispositivo recibe \((M, \sigma)\) y decide si instala.
+
+## 4.6 Aplicaciones que hay que saber contar
+
+**Certificado.** Si el servidor pudiera decir “mi llave es esta”, cualquiera se haría pasar por `aula.example`. La autoridad comprueba el vínculo nombre–llave y lo firma. Ese documento es el certificado.
+
+Antes de firmar, en el ejemplo del curso:
+
+- Control del dominio: la autoridad manda un reto y lo busca en un TXT del DNS.
+- Posesión de la privada: el administrador firma una solicitud con el nombre y la llave pública; la autoridad verifica esa firma.
+
+La autoridad firma los bytes DER de los datos del certificado (el campo `tbsCertificate`): nombre DNS, llave pública y algoritmo, emisor, número de serie, vigencia.
+
+**Cadena.** El navegador trae una copia auténtica de la llave de una raíz \(R\). El servidor envía primero el certificado del sitio y después el de la intermedia \(I\).
+
+1. Con \(pk_R\) verifica el certificado de \(I\) y obtiene \(pk_I\). Comprueba que \(I\) puede emitir.
+2. Con \(pk_I\) verifica el certificado del servidor y obtiene \(pk_S\).
+3. Comprueba vigencias, usos y que el nombre de la URL coincida con el `subjectAltName`. `aula.example` no queda cubierto por `biblioteca.example`.
+
+**Posesión en esta conexión.** Copiar el certificado no demuestra poseer \(sk_S\). En TLS 1.3 el servidor firma un valor \(T\) que incluye el contexto y el hash del saludo, y lo manda en `CertificateVerify`. El navegador reconstruye \(T\) y verifica con \(pk_S\).
+
+**Revocación.** Si después se copia \(sk_S\), la fecha de vigencia no basta.
+
+- CRL: el número de serie aparece en una lista firmada y vigente.
+- OCSP: un respondedor autorizado firma el estado de ese certificado. El cliente mira la firma y la actualidad.
+
+**Actualización de software.** El dispositivo trae \(pk\) auténtica del fabricante. Solo instala si \(\mathrm{Ver}(pk, M, \sigma) = 1\). Sustituir \(M\) por \(M'\) y reutilizar \(\sigma\) tiene que dar verificación 0. Si un archivo nunca firmado verifica, el atacante ganó el juego de falsificación.
+
+**Sello de tiempo.** Bob quiere demostrar que la firma de Alicia ya existía antes del mediodía. Calcula \(h = H(\sigma)\) sobre los bytes de la firma de Alicia, no sobre la orden. La autoridad de sellado firma un sello con el identificador de \(H\), el resumen y la hora de su reloj. El tercero comprueba tres cosas: la firma de Alicia sobre la orden, la firma del sello, y que \(H(\sigma)\) coincida con el resumen sellado. Si el sello dice 11:58:00 con un segundo de margen, la firma existía a más tardar a las 11:58:01.
+
+## 4.7 Errores frecuentes
+
+- Creer que una MAC da no repudio.
+- Firmar sin hash resistente a colisiones, o hashear solo a veces (firmar y verificar tienen que usar el mismo resumen).
+- Reutilizar \(k\) en ECDSA.
+- Verificar el certificado y no el nombre, o parar en la intermedia sin anclar la raíz que ya está en el almacén.
+- Aceptar el certificado sin prueba de posesión de la privada en esa conexión.
+- Ignorar la revocación porque “la fecha sigue vigente”.
+- Sellar \(H(M)\) cuando el protocolo sella \(H(\sigma)\): son vínculos distintos. En el curso se sella la firma.
+
+## 4.8 ECDSA frente a RSA-PKCS#1 v1.5 (las dos firmas del curso)
+
+|  | ECDSA | RSA-PKCS#1 v1.5 |
+| --- | --- | --- |
+| Llave pública | Un punto \(Y = xP\) | \((n, e)\) |
+| Operación de firma | Nonce \(k\), punto \(kP\), aritmética módulo \(q\) | Codificar el hash con relleno `00 01 FF… 00 DI`, elevar a \(d\) módulo \(n\) |
+| Firma | Par \((r, s)\) | \(\ell\) bytes, tantos como el módulo |
+| Aleatoriedad al firmar | Obligatoria y única | El esquema de las diapositivas es determinista dado \(M\) |
+| Fallo típico | Repetir \(k\) revela \(x\) | Un relleno mal comprobado, o un módulo factorizable |
+| Dónde aparece | Diapositivas y cuaderno P-256 | Diapositivas y cuaderno de 2048 bits |
+
+ElGamal sobre la curva **cifra**. ECDSA **firma**. No son intercambiables, aunque los dos usen un efímero y un punto.
+
+---
+
+# Mapa de conexiones entre los cuatro temas
+
+```text
+                    grupo en la curva
+                    ECDLP difícil
+                     |          |            |
+                   ECDH      ElGamal       ECDSA
+                     |          |            |
+                     |          |        hash del mensaje
+                     v          v            v
+              secreto abG    confidencialidad   firma (r,s)
+                     |
+                   HKDF (HMAC)
+                  /            \
+               kE              kM
+                |               |
+           cifrado         Encrypt-then-MAC
+                                |
+                         AEAD (GCM es un caso)
+
+Hash  --->  contraseñas (sal + costo) y prueba de trabajo
+Hash  --->  HMAC  --->  reto-respuesta y HKDF
+Hash  --->  hash-luego-firma y Resumen_q de ECDSA
+Hash  -X->  no sustituye a una MAC ni a una firma
+
+MAC   --->  integridad entre quienes comparten k
+MAC   -X->  un tercero no verifica, no hay no repudio
+Firma --->  integridad verificable con la llave pública
+Firma -X->  no cifra el mensaje
+```
+
+Cinco puentes que el examen puede pedir en una frase:
+
+1. **Hash dentro de la firma.** Sin resistencia a colisiones, hash-luego-firma se falsifica pidiendo una sola firma. ECDSA no firma el mensaje: firma un entero sacado del hash.
+2. **Hash dentro de la MAC.** HMAC es un hash con llave, construido para que la extensión de longitud de Merkle–Damgård no sirva como falsificación.
+3. **MAC frente a firma.** Las dos impiden que un extraño altere el mensaje. Solo la firma la puede comprobar alguien que no posee un secreto compartido.
+4. **Curva dentro de la MAC, pasando por HKDF.** ECDH da un punto. HKDF, que es HMAC, lo convierte en \(k_E\) y \(k_M\). Esas llaves solo sirven si los puntos de ECDH eran auténticos.
+5. **Composición.** La confidencialidad (cifrado o ElGamal) y la integridad (MAC o firma) son objetivos distintos. Juntarlos al revés, MAC-then-encrypt, no hereda las dos seguridades.
+
+---
+
+# Apéndice del banco (si sobra una hora)
+
+El tablero no nombra estos protocolos. El banco y las diapositivas de protocolos sí. Si el tiempo se acaba, prioriza los cuatro temas. Si puedes, quédate con Schnorr y con el cuadro de PAKE.
+
+## Schnorr, identificación
+
+Grupo multiplicativo de orden primo \(q\), generador \(g\), pública \(y = g^x\), secreta \(x\).
+
+1. Peggy elige \(r\) y envía \(t = g^r\).
+2. Victor elige el reto \(c\).
+3. Peggy responde \(s = r + cx \bmod q\).
+4. Victor acepta si \(g^s \equiv t \cdot y^c\).
+
+**Correctitud.** \(g^s = g^{r+cx} = g^r (g^x)^c = t\, y^c\).
+
+**Dos transcripciones con el mismo \(t\) y retos distintos** recuperan el secreto:
+
+\[
+s - s' \equiv (c - c')x \pmod q, \qquad x \equiv (s-s')(c-c')^{-1} \pmod q.
+\]
+
+Por eso un impostor no puede fijar \(s\) antes de ver \(c\): el reto tiene que ser impredecible y posterior al compromiso.
+
+**Ejemplo.** \(p = 23\), \(q = 11\), \(g = 2\), \(x = 7\), \(y = 2^7 \bmod 23 = 13\), \(r = 4\), \(t = 16\), \(c = 5\), \(s = (4 + 35) \bmod 11 = 6\).
+
+\[
+2^6 = 64 \equiv 18, \qquad 16 \cdot 13^5 \equiv 18 \pmod{23}.
+\]
+
+Segunda transcripción honesta con \(c' = 2\): \(s' = 7\). Entonces
+
+\[
+x \equiv (6-7)(5-2)^{-1} \equiv 10 \cdot 4 = 40 \equiv 7 \pmod{11}.
+\]
+
+**Fiat–Shamir.** El reto deja de ser interactivo: \(c = H(m \mathbin\| t)\). Firmar es elegir \(r\), calcular \(t = g^r\), \(c = H(m \mathbin\| t)\), \(s = r + cx \bmod q\), y publicar \((t, s)\) o \((c, s)\). Verificar recomputa \(c\) con el mismo hash y comprueba la ecuación de Schnorr. El hash hace de Victor: quien verifica no necesita hablar con el firmante. En el modelo del curso se piensa como oráculo aleatorio.
+
+Schnorr en el cuaderno está en \(\mathbb{Z}_p^\ast\) con primo seguro \(p = 2q+1\) y generador de orden \(q\). La ecuación es la misma que en el banco.
+
+## PAKE, solo el mapa
+
+Objetivo: acordar una llave de sesión con una contraseña de diccionario pequeño, sin autoridad de certificación, y sin que el transcript permita probar el diccionario fuera de línea.
+
+| Versión | Idea | Pasivo | Activo | Servidor comprometido |
+| --- | --- | --- | --- | --- |
+| v.0 | \(k = H(pw, r, s, \mathrm{id})\) | No: con un claro conocido se prueba el diccionario | No | No |
+| v.1 | Diffie–Hellman y el secreto \(g^{\alpha\beta}\) entra al hash junto con \(pw\) | Sí, si CDH es difícil | No: el adversario elige los puntos | No |
+| v.2 | \(u = g^\alpha a^{pw}\), \(v = g^\beta b^{pw}\), se cancela \(pw\) al calcular \(g^{\alpha\beta}\) | Sí | Sí: sin \(pw\) no fabrica el otro lado | No, porque el servidor guarda \(pw\) |
+| v.2+ | El servidor guarda \((\pi_0, c = g^{\pi_1})\), no \(pw\). \(\pi_0, \pi_1\) salen de un hash de la contraseña | Sí | Sí | El adversario no se hace pasar por el cliente: \(\pi_0\) y \(\pi_1\) están separados |
+
+La confirmación de llave (\(k_A, k_B\) derivadas con una MAC, y \(k_e\) aparte para cifrar) detecta que las dos partes llegaron a la misma llave y que nadie alteró el intercambio. Separar la llave de confirmación y la llave de cifrado evita usar el mismo secreto para dos oficios.
+
+## Qué escribir si sales en blanco
+
+1. Dibuja el juego (retador, adversario, qué se entrega, cuándo se gana).
+2. Di qué secreto hay y qué pasa si se reutiliza.
+3. Solo entonces escribas la fórmula. Una fórmula sin el juego suele perder los puntos de seguridad.

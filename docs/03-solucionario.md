@@ -1,0 +1,248 @@
+# Solucionario del simulacro
+
+Ábrelo solo después de hacer `docs/02-simulacro.md` con el reloj. Cada inciso dice qué se acepta y qué no suma.
+
+La curva de referencia es \(y^2 \equiv x^3 + 2x + 2 \pmod{17}\), \(G = (5,1)\), orden 19. Los resultados numéricos de abajo están calculados en ese grupo.
+
+---
+
+## Sección A (2 puntos cada una; opción exacta)
+
+**A1. (c).** El juego de colisión no entrega un objetivo ni un mensaje: el adversario busca cualquier pareja distinta. (a) es preimagen. (b) es segunda preimagen. (d) confunde hash con MAC.
+
+**A2. (b).** Preimagen: un blanco fijo, orden \(2^n\). Colisión: cualquier pareja, orden \(2^{n/2}\) por el cumpleaños.
+
+**A3. (b).** Encrypt-then-MAC verifica la etiqueta del criptotexto antes de descifrar. (a) es MAC-then-encrypt. (c) es un hash sin llave. (d) es un oráculo de relleno.
+
+**A4. (b).** La verificación de la firma es pública. La de la MAC necesita \(k\), y con \(k\) se fabrican etiquetas: el juez no puede recibirla. (a) es falso: HMAC también usa un hash. (c) invierte los papeles. (d) es falso: ECDSA usa \(\mathrm{Resumen}_q(H(M))\).
+
+**A5. (c).** El bloque se combina solo con los \(r\) bits de tasa. La capacidad no se publica. (d) describe el IV público de Merkle–Damgård, que además no es secreto.
+
+---
+
+## Sección B (3 puntos el conjunto exacto; 1 punto si falta o sobra exactamente una opción; 0 en otro caso)
+
+**B1. (a), (c), (d).**
+
+- (a) La sal se guarda junto al verificador y se usa al recomputar.
+- (b) es falso: con la sal conocida el diccionario se prueba igual, solo que no se reutiliza el trabajo entre registros.
+- (c) es el ataque que la sal evita.
+- (d) es el párrafo de las diapositivas: el costo encarece, no hace impredecible una contraseña débil.
+- (e) es falso: el ataque sobre la copia es fuera de línea.
+
+**B2. (a), (c).**
+
+- (a) Dos firmas con el mismo \(k\) y la misma \(x\) dan el mismo \(r\) y un sistema que despeja \(k\) y \(x\), si los resúmenes difieren módulo \(q\).
+- (b) La pública se publica por diseño.
+- (c) De \(s \equiv k^{-1}(h+rx)\) se despeja \(x \equiv (ks - h)r^{-1} \pmod q\).
+- (d) Es la verificación honesta, no un ataque.
+- (e) \(k = 0\) no es un nonce válido: no está en \(\{1,\ldots,q-1\}\) y \(kP = \mathcal{O}\). No “recupera” \(x\); la firma ni siquiera se emite.
+
+**B3. (a), (b), (c), (e).**
+
+Son las hipótesis del teorema de las diapositivas: cifrado seguro ante mensajes elegidos, MAC segura, llaves independientes, y la etiqueta cubre el criptotexto (con el IV). Verificar antes de descifrar es el orden del receptor. (d) autentica el claro y deja un cifrado que no cumple la hipótesis; es otra composición.
+
+---
+
+## Sección C (1 punto el valor de verdad, 2 la justificación)
+
+**C1. Verdadero.** Si alguien rompe segunda preimagen, se construye un rompecolisiones: se elige \(m\), se le entrega al adversario de segunda preimagen, y el \(m' \neq m\) que devuelve es una colisión. Por contraposición, colisión resistente implica segunda-preimagen resistente. No se acepta “porque colisión es más fuerte” sin el adversario.
+
+**C2. Falso.** En el juego de las diapositivas se gana con un par \((m^\star, t^\star)\) que no esté en \(Q\). El mensaje puede haberse consultado. Una etiqueta nueva sobre un mensaje viejo es falsificación. Confundir esto con el juego de firmas (allí el mensaje tiene que ser nuevo) es el error típico; si la justificación dice eso, el inciso puede quedar en 2 de 3, no en 3, porque hay que citar la condición \((m^\star, t^\star) \notin Q\).
+
+**C3. Falso.** El hombre en el medio sustituye \(U = \alpha G\) por \(U' = \alpha_M G\) y \(V = \beta G\) por \(V' = \beta_M G\). Alicia comparte \(\alpha\beta_M G\) con Mallory. Bob comparte \(\beta\alpha_M G\) con Mallory. No comparten entre ellos. El problema de Diffie–Hellman sigue entero: Mallory no calculó \(\alpha\beta G\). Falta autenticar los puntos.
+
+**C4. Falso.** En la extracción, una salida más larga se obtiene aplicando otra vez \(f\) y concatenando. El prefijo de \(v\) bits no cambia al pedir más. El cuaderno lo comprueba: la salida corta de SHAKE es prefijo de la larga.
+
+**C5. Verdadero.** El sello ata la hora a \(H(\sigma)\). Eso demuestra que esos bytes de firma ya existían. Que correspondan a la orden exige, aparte, \(\mathrm{Ver}(pk_A, M, \sigma) = 1\). Sin esa verificación, el sello solo fecha una cadena de bytes.
+
+---
+
+## Sección D (2 puntos; 1 si la idea está y la fórmula está incompleta)
+
+**D1.** La longitud del mensaje. (“El tamaño del bloque” no vale: eso ya está al partir \(\hat M\).)
+
+**D2.** \(E(y, x) \oplus x\). Aceptable: \(E(m_i, t_{i-1}) \oplus t_{i-1}\). La variante SHA-256 con \(\boxplus\) también se acepta si se dice que es la de SHA-256 y no la de Davies–Meyer genérico.
+
+**D3.** \(t = H(k_{\mathrm{out}} \mathbin\| d)\), con \(d = H(k_{\mathrm{in}} \mathbin\| m)\). Hace falta nombrar las dos máscaras o los dos bloques. Solo “\(H(k \mathbin\| m)\)” vale 0.
+
+**D4.** \(a = s^{-1} h \bmod q\), \(b = s^{-1} r \bmod q\). También \(a = hw\), \(b = rw\) con \(w = s^{-1}\).
+
+**D5.** Pendiente. Lo elimina (lo consume, no lo vuelve a aceptar). “Lo marca como usado” vale los 2 puntos.
+
+---
+
+## Sección E
+
+**E1. (6 puntos.)**
+
+- 2 puntos: el adversario pide la firma de uno solo de los dos, por ejemplo \(m_0\), y recibe \(\sigma = \mathrm{Firma}_0(sk, H(m_0))\).
+- 2 puntos: entrega \((m_1, \sigma)\). \(m_1 \notin Q\).
+- 2 puntos: \(\mathrm{Ver}_0(pk, H(m_1), \sigma) = 1\) porque \(H(m_1) = H(m_0)\). Es el juego EUF-CMA: mensaje nuevo, firma válida. No hace falta romper \(\mathrm{Firma}_0\).
+
+Si firma los dos mensajes, el juego no se gana: los dos estarían en \(Q\). Eso deja el inciso en 2 como máximo.
+
+**E2. (6 puntos, 2 cada parte.)**
+
+- (a) El juez no tiene \(k\). Si Bob se la entrega, el juez (o Bob) puede fabricar etiquetas de otras órdenes. La MAC no identifica a Alicia ante alguien que no compartía el secreto en el momento de emitirla.
+- (b) Bob guarda \((M, \sigma)\) con \(\sigma = \mathrm{Firma}(sk_A, M)\). El juez necesita una copia auténtica de \(pk_A\) (un certificado validado hasta una raíz de confianza, no la llave que Bob le dicte sin más).
+- (c) No repudio, o verificación pública. “Integridad” sola no basta: la MAC también da integridad entre los que tienen \(k\).
+
+**E3. (6 puntos.)**
+
+Adversario \(B\) contra colisiones, usando un adversario \(A\) contra segunda preimagen:
+
+1. \(B\) elige \(m\) según la distribución del juego de segunda preimagen (2 puntos).
+2. Entrega \(m\) a \(A\). \(A\) devuelve \(m'\) (1 punto).
+3. \(B\) entrega \((m, m')\) al juego de colisión (1 punto).
+4. Si \(A\) gana, \(m' \neq m\) y \(H(m') = H(m)\), así que \(B\) gana (2 puntos).
+
+No se acepta la reducción al revés (usar un rompecolisiones para segunda preimagen) en este inciso: el enunciado pide este sentido, que es el que prueba colisión resistente \(\Rightarrow\) segunda-preimagen resistente.
+
+---
+
+## Sección F
+
+**F1. (8 puntos.)**
+
+**(a) 3 puntos.** Doble de \((5, 1)\), \(A = 2\).
+
+\[
+\lambda \equiv (3\cdot 5^2 + 2)\cdot (2\cdot 1)^{-1} = 9 \cdot 9 = 81 \equiv 13 \pmod{17}.
+\]
+
+\[
+x_3 \equiv 13^2 - 5 - 5 = 169 - 10 \equiv 6, \qquad y_3 \equiv 13(5-6) - 1 = -14 \equiv 3.
+\]
+
+Resultado \((6, 3)\), que es \(2G\). Un error de signo en \(y_3\) que deje \((6, 14)\) vale 2 de 3 si \(\lambda\) y \(x_3\) están bien: ese punto es el inverso.
+
+**(b) 3 puntos.** Suma \((5, 1) + (6, 3)\).
+
+\[
+\lambda \equiv (3-1)\cdot(6-5)^{-1} = 2.
+\]
+
+\[
+x_3 \equiv 4 - 5 - 6 = -7 \equiv 10, \qquad y_3 \equiv 2(5-10) - 1 = -11 \equiv 6.
+\]
+
+Resultado \((10, 6) = 3G\).
+
+**(c) 2 puntos.** El inverso es \((5, -1 \bmod 17) = (5, 16)\). La suma es \(\mathcal{O}\), no el punto \((0,0)\) ni \((5, 0)\).
+
+**F2. (8 puntos.)**
+
+**(a) 3 puntos.** \(R = 5G = (9, 16)\), \(r = 9 \bmod 19 = 9\).
+
+\[
+k^{-1} \equiv 4, \quad h + rx = 8 + 27 = 35 \equiv 16, \quad s \equiv 4\cdot 16 = 64 \equiv 7 \pmod{19}.
+\]
+
+Firma \((r, s) = (9, 7)\). Si se usa el inverso módulo 17 en vez de módulo 19, el inciso queda en 1: es el error que la guía señala.
+
+**(b) 3 puntos.** \(w = s^{-1} = 7^{-1} \equiv 11\). \(a = 8\cdot 11 = 88 \equiv 12\). \(b = 9\cdot 11 = 99 \equiv 4\).
+
+\[
+R' = 12G + 4Y = 12G + 12G = 24G = 5G = (9, 16),
+\]
+
+porque \(Y = 3G\) y \(24 \equiv 5 \pmod{19}\). \(x_{R'} \bmod 19 = 9 = r\). Se acepta.
+
+**(c) 2 puntos.** Con el mismo \(r = 9\):
+
+\[
+s_1 \equiv k^{-1}(h_1 + rx), \qquad s_2 \equiv k^{-1}(h_2 + rx) \pmod{19}.
+\]
+
+\[
+k \equiv (h_1 - h_2)(s_1 - s_2)^{-1} = (8-4)(7-10)^{-1} \pmod{19}.
+\]
+
+\[
+x \equiv (k s_1 - h_1)\, r^{-1} \pmod{19}.
+\]
+
+Dejar las dos expresiones despejadas basta. Quien las resuelva debe obtener \(k = 5\) y \(x = 3\); un resultado distinto con el despeje bien escrito no resta si no se pedía resolver.
+
+---
+
+## Sección G
+
+**G1. (6 puntos, 2 cada parte.)**
+
+- (a) Sí, con probabilidad abrumadora: SHA-256 cambia el resumen si cambia un bit, y Bob recomputa. Esto es detección de error, no seguridad.
+- (b) El adversario elige \(m'\), calcula \(t' = H(m')\) y envía \((m', t')\). Bob acepta. No necesita una colisión.
+- (c) Con secreto compartido: una MAC (HMAC o CMAC), y un mecanismo antirrepetición si el contexto lo exige. Ante un tercero que no debe poder firmar: firma digital de Alicia. Responder solo “cifrar” vale 0 en (c): el cifrado no da integridad por sí solo.
+
+**G2. (6 puntos.)**
+
+- (a) 2 puntos. \(T_n = S_n - M_n\). \(R_n\) no hace falta para este paso.
+- (b) 2 puntos. \(i_{j-1} Q = i_j Q - f(j) Q\), así \(T_{j-1} = T_j - f(j)Q\). \(f(j)Q\) es calculable: \(f\) es pública y \(Q\) es pública.
+- (c) 1 punto. \(M_j = S_j - T_j\).
+- (d) 1 punto. No. La relación afín de los efímeros ya relaciona los enmascarados. El logaritmo discreto seguiría siendo difícil y, aun así, los claros caen.
+
+---
+
+## Sección H (6 puntos)
+
+Rúbrica, sumable:
+
+- 1 punto: no guardar \(pw\) en claro ni \(H(pw)\) solo.
+- 2 puntos: sal aleatoria por registro, de tamaño amplio (el curso usa 128 bits), guardada porque es pública, y verificador \(y = \mathrm{KDF}(pw, \mathrm{salt}, d)\).
+- 1 punto: al hacer login se repite la derivación con la sal y el \(d\) guardados, y se compara el resultado completo con \(y\).
+- 1 punto: \(d\) ajustable encarece el diccionario fuera de línea; subirlo no cambia el número de candidatos.
+- 1 punto: el ataque que sigue abierto es el diccionario sobre ese registro si \(pw\) es predecible, y el phishing si el usuario entrega \(pw\) a otro sitio. La sal no los cierra.
+
+Una respuesta que nombre PBKDF2 con sal y iteraciones, en el espíritu del cuaderno, está en el rango de 6. Pedir “encriptar las contraseñas con AES y guardar la llave en el mismo servidor” queda en 1 como máximo.
+
+---
+
+## Sección I (4 puntos)
+
+```text
+verificar(kE, kM, c, t):
+    si V(kM, c, t) = 0:
+        devolver rechazo          # no se llama a Dec
+    m ← Dec(kE, c)
+    devolver m
+```
+
+- 2 puntos: \(V\) sobre el criptotexto, con \(k_M\), antes de descifrar.
+- 1 punto: si la etiqueta falla, no se descifra (o el resultado del descifrado no se entrega).
+- 1 punto: llaves separadas. Usar una sola llave para las dos cosas deja el inciso en 3 como máximo.
+
+Autenticar \(m\) en lugar de \(c\) es MAC-then-encrypt y vale 0, aunque el orden “verificar antes” esté bien intencionado: no se puede verificar el claro sin descifrar.
+
+---
+
+## Sección J (10 puntos)
+
+**(a) 6 puntos.**
+
+\[
+R' = s^{-1}h\,P + s^{-1}r\,Y = s^{-1}h\,P + s^{-1}r\,(xP) = s^{-1}(h + rx)P.
+\]
+
+De \(s \equiv k^{-1}(h + rx) \pmod q\) se sigue \(ks \equiv h + rx \pmod q\), luego
+
+\[
+s^{-1}(h + rx) \equiv k \pmod q.
+\]
+
+Hace falta escribir las dos sustituciones: \(Y = xP\) y el despeje de \(s\). Cada una vale 3.
+
+**(b) 2 puntos.** \(R' = kP = R\), así \(x_{R'} \bmod q = x_R \bmod q = r\), y \(R' \neq \mathcal{O}\) porque \(r \neq 0\). El verificador acepta.
+
+**(c) 2 puntos.** El orden \(q\) permite reducir el escalar \(s^{-1}(h+rx)\) módulo \(q\) sin cambiar el punto: \(kP = (k \bmod q)P\). Sin eso, la congruencia de \(s\) no se trasladaría a la suma de puntos.
+
+---
+
+## Nota de corte orientativa
+
+| Rango | Lectura |
+| --- | --- |
+| 85–100 | Puedes dedicar el repaso a velocidad y a no confundir los módulos. |
+| 70–84 | Hay huecos localizados. El bloque final del plan se gasta solo en los incisos de 0 y 1. |
+| 50–69 | La intuición está y los juegos no. Rehaz E3, J y el juego de MAC en voz alta antes de volver a los números. |
+| Menos de 50 | No releas la guía entera. Vuelve a las secciones 1.3, 1.7, 2.2, 3.2, 3.7 y 4.2, y repite F1 y J con el cuaderno cerrado. |
